@@ -3,20 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+
+	appRouter "github.com/CunhazadanoDale/trads-market-test/internal/adapter/http"
 )
 
 func main() {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	router := appRouter.NewRouter()
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: router,
 	}
 
 	log.Println("API rodando em " + server.Addr)
