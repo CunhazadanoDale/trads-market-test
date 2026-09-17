@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: trads-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=trads
+      - POSTGRES_USER=trads
+      - POSTGRES_PASSWORD=trads
+    ports:
+      - "5444:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trads -d trads"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
