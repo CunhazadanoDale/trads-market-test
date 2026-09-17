@@ -1,5 +1,3 @@
--- +goose Up
-
 CREATE TABLE population_indicators (
     id BIGSERIAL PRIMARY KEY,
     city_id BIGINT NOT NULL,
