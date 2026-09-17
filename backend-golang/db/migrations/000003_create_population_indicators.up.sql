@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS population_indicators (
     id BIGSERIAL PRIMARY KEY,
     city_id BIGINT NOT NULL,
     year SMALLINT NOT NULL,
-    population BIGINT NOT NULL,
+    value BIGINT NOT NULL,
+    source VARCHAR(100) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -11,11 +12,14 @@ CREATE TABLE IF NOT EXISTS population_indicators (
         REFERENCES cities(id)
         ON DELETE CASCADE,
 
+    CONSTRAINT uq_population_city_year_source
+        UNIQUE (city_id, year, source),
+
     CONSTRAINT uq_population_city_year
         UNIQUE (city_id, year),
 
-    CONSTRAINT chk_population_positive
-        CHECK (population >= 0),
+    CONSTRAINT chk_population_value
+        CHECK (value >= 0),
 
     CONSTRAINT chk_population_year
         CHECK (year >= 1900)
