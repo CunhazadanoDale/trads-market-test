@@ -14,7 +14,6 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
-	router := appRouter.NewRouter()
 
 	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -24,6 +23,8 @@ func main() {
 		log.Fatal(fmt.Errorf("erro ao conectar ao database: %w", err))
 	}
 	defer db.Close()
+
+	router := appRouter.NewRouter(db)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
