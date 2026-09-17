@@ -1,4 +1,4 @@
-CREATE TABLE cities (
+CREATE TABLE IF NOT EXISTS cities (
     id BIGSERIAL PRIMARY KEY,
     ibge_code INTEGER NOT NULL UNIQUE,
     state_id BIGINT NOT NULL,

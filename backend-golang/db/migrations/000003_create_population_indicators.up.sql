@@ -1,4 +1,4 @@
-CREATE TABLE population_indicators (
+CREATE TABLE IF NOT EXISTS population_indicators (
     id BIGSERIAL PRIMARY KEY,
     city_id BIGINT NOT NULL,
     year SMALLINT NOT NULL,
