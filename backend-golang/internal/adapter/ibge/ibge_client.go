@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 )
 
 const defaultbaseURL = "https://servicodados.ibge.gov.br/api/v3"
@@ -17,7 +19,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(httpClient *http.Client) *Client {
+func NewIbgeClient(httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = &http.Client{
 			Timeout: 30 * time.Second,
@@ -60,3 +62,12 @@ func (c *Client) Get(ctx context.Context, path string,
 
 		return nil
 	}
+
+func (c *Client) GetAggregates(ctx context.Context) ([]dtos.Aggregate, error) {
+	var response []dtos.Aggregate
+	if err := c.Get(ctx, "/agregados", nil, &response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
