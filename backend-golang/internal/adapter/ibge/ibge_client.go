@@ -12,21 +12,22 @@ import (
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 )
 
-const defaultbaseURL = "https://servicodados.ibge.gov.br/api/v3"
 
 type Client struct {
 	baseURL    string
+	baseURLLocalidades string
 	httpClient *http.Client
 }
 
-func NewIbgeClient(httpClient *http.Client) *Client {
+func NewIbgeClient(baseURL string, baseURLLocalidades string, httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = &http.Client{
 			Timeout: 30 * time.Second,
 		}
 	}
 	return &Client{
-		baseURL:    defaultbaseURL,
+		baseURL:    baseURL,
+		baseURLLocalidades: baseURLLocalidades,
 		httpClient: httpClient,
 	}
 }
@@ -62,6 +63,47 @@ func (c *Client) Get(ctx context.Context, path string,
 
 		return nil
 	}
+
+func (c *Client) GetFromBase(ctx context.Context, path string, query url.Values, target any) error {
+	endpoint := strings.TrimRight(c.baseURLLocalidades, "/") + "/" + strings.TrimLeft(path,"/")
+
+	if len(query) > 0 {
+		endpoint += "?" + query.Encode()
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		endpoint,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("create IBGE request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request IBGE API: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK ||
+		resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf(
+			"IBGE API returned status %d",
+			resp.StatusCode,
+		)
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		return fmt.Errorf("decode IBGE response: %w", err)
+	}
+
+	return nil
+}
 
 func (c *Client) GetAggregates(ctx context.Context) ([]dtos.Aggregate, error) {
 	var response []dtos.Aggregate
