@@ -11,6 +11,7 @@ type Config struct {
 	AppEnv string
 	DatabaseUrl string
 	BaseUrlIBGE string
+	BaseUrlLocalidades string
 }
 
 func LoadConfig() *Config {
@@ -21,5 +22,6 @@ func LoadConfig() *Config {
 		AppEnv: os.Getenv("APP_ENV"),
 		DatabaseUrl: os.Getenv("DATABASE_URL"),
 		BaseUrlIBGE: os.Getenv("BASE_URL_IBGE"),
+		BaseUrlLocalidades: os.Getenv("BASE_URL_LOCALIDADES"),
 	}
 }
