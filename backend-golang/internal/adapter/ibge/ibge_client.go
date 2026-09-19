@@ -71,3 +71,21 @@ func (c *Client) GetAggregates(ctx context.Context) ([]dtos.Aggregate, error) {
 
 	return response, nil
 }
+
+func (c *Client) GetPopulation2022(ctx context.Context) ([]dtos.PopulationRecord, error) {
+	query := url.Values{}
+	query.Set("localidades", "N6[all]")
+
+	var response []dtos.PopulationRecord
+	err := c.Get(
+		ctx,
+		"/agregados/4709/periodos/2022/variaveis/93",
+		query,
+		&response,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
