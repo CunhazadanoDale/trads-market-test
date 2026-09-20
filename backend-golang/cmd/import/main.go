@@ -16,7 +16,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		30*time.Second,
+		5*time.Minute,
 	)
 	defer cancel()
 
@@ -35,4 +35,13 @@ func main() {
 	}
 
 	log.Println("states imported successfully")
+
+	cityRepository := postgres.NewCityRepository(db)
+	cityService := usecases.NewCityUsecaseImpl(cityRepository, ibgeClient)
+
+	if err := cityService.Import(ctx); err != nil {
+		log.Fatal("falha ao importar cidades: %v", err)
+	}
+
+	log.Println("IBGE import successfully")
 }
