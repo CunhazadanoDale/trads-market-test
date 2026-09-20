@@ -9,7 +9,7 @@ import (
 
 func (c *Client) GetStates(ctx context.Context) ([]dtos.StateRecord, error) {
 	var response []dtos.StateRecord
-	err := c.Get(ctx, "/localidades/estados", nil, &response)
+	err := c.GetFromBase(ctx, "/localidades/estados", nil, &response)
 	if err != nil {
 		return nil, err
 	}
