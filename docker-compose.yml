@@ -17,15 +17,37 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - trads-network
+
+  adminer:
+    image: adminer:latest
+    container_name: trads-adminer
+    restart: unless-stopped
+    ports:
+      - "8084:8080"
+    depends_on:
+      - postgres
+    networks:
+      - trads-network
 
   migrate:
     image: migrate/migrate:latest
     container_name: trads-migrate
     entrypoint: ["migrate"]
+    command: ["-path=/migrations", "-database", "postgres://trads:trads@postgres:5432/trads?sslmode=disable", "up"]
     volumes:
       - ./backend-golang/db/migrations:/migrations
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - trads-network
+
 
 volumes:
   postgres_data:
+
+networks:
+  trads-network:
+    driver: bridge
