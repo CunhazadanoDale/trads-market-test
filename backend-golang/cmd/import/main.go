@@ -2,52 +2,37 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/postgres"
 	"github.com/CunhazadanoDale/trads-market-test/internal/config"
+	"github.com/CunhazadanoDale/trads-market-test/internal/core/usecases"
 )
 
 func main() {
-	ctx := context.Background()
 	cfg := config.LoadConfig()
 
-	client := ibge.NewIbgeClient(cfg.BaseUrlIBGE, cfg.BaseUrlLocalidades, nil)
-	states, err := client.GetStates(ctx)
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		30*time.Second,
+	)
+	defer cancel()
+
+	db, err := postgres.NewDBConnection(ctx, cfg.DatabaseUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("falha ao conectar com o database: %v", err)
+	}
+	defer db.Close()
+
+	ibgeClient := ibge.NewIbgeClient(cfg.BaseUrlIBGE, cfg.BaseUrlLocalidades, nil)
+	stateRepository := postgres.NewStateRepo(db)
+	stateService := usecases.NewStateUseCase(stateRepository, ibgeClient)
+
+	if err := stateService.Import(ctx); err != nil {
+		log.Fatalf("falha ao importar estados: %v", err)
 	}
 
-	fmt.Printf("Estados encontrados: %d\n", len(states))
-
-	for _, state := range states {
-		fmt.Printf(
-			"%s - %s (%s)\n",
-			state.Sigla,
-			state.Nome,
-			state.Regiao.Nome,
-		)
-	}
-
-	fmt.Println()
-
-	cities, err := client.GetCitiesByState(ctx, "PB")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Municípios da PB: %d\n", len(cities))
-
-	for i, city := range cities {
-		if i >= 10 {
-			break
-		}
-
-		fmt.Printf(
-			"%d - %s\n",
-			city.ID,
-			city.Nome,
-		)
-	}
+	log.Println("states imported successfully")
 }
