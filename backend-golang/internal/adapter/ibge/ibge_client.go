@@ -118,7 +118,7 @@ func (c *Client) GetPopulation2022(ctx context.Context) ([]dtos.PopulationRecord
 	query := url.Values{}
 	query.Set("localidades", "N6[all]")
 
-	var response []dtos.PopulationRecord
+	var response sidraResponse
 	err := c.Get(
 		ctx,
 		"/agregados/4709/periodos/2022/variaveis/93",
@@ -129,5 +129,18 @@ func (c *Client) GetPopulation2022(ctx context.Context) ([]dtos.PopulationRecord
 		return nil, err
 	}
 
-	return response, nil
+	var records []dtos.PopulationRecord
+	for _, topLevel := range response {
+		for _, resultado := range topLevel.Resultados {
+			records = append(records, resultado.Series...)
+		}
+	}
+
+	return records, nil
+}
+
+type sidraResponse []struct {
+	Resultados []struct {
+		Series []dtos.PopulationRecord `json:"series"`
+	} `json:"resultados"`
 }

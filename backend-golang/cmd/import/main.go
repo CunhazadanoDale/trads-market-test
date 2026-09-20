@@ -43,5 +43,16 @@ func main() {
 		log.Fatal("falha ao importar cidades: %w", err)
 	}
 
+	log.Println("cities imported successfully")
+
+	populationRepository := postgres.NewPopulationRepo(db)
+	populationService := usecases.NewPopulationUsecaseImpl(populationRepository, ibgeClient)
+
+	if err := populationService.Import2022(ctx); err != nil {
+		log.Fatalf("falha ao importar população: %v", err)
+	}
+
+	log.Println("population imported succesffuly")
+
 	log.Println("IBGE import successfully")
 }
