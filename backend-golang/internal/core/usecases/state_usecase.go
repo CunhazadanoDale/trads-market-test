@@ -13,11 +13,11 @@ import (
 var _ in.StateUseCase = (*StateUseCaseImpl)(nil)
 
 type StateUseCaseImpl struct {
-	repo       *out.StatesRepository
+	repo       out.StatesRepository
 	ibgeClient *ibge.Client
 }
 
-func NewStateUseCase(repo *out.StatesRepository, ibgeClient *ibge.Client) *StateUseCaseImpl {
+func NewStateUseCase(repo out.StatesRepository, ibgeClient *ibge.Client) *StateUseCaseImpl {
 	return &StateUseCaseImpl{
 		repo:       repo,
 		ibgeClient: ibgeClient,
@@ -39,7 +39,7 @@ func (s *StateUseCaseImpl) Import(ctx context.Context) error {
 			Region: item.Regiao.Nome,
 		}
 
-		if err := (*s.repo).Upsert(ctx, &state); err != nil {
+		if err := s.repo.Upsert(ctx, &state); err != nil {
 			return fmt.Errorf("falha ao inserir/atualizar estado %s: %w", state.Name, err)
 		}
 	}
