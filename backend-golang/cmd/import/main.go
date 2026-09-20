@@ -40,7 +40,7 @@ func main() {
 	cityService := usecases.NewCityUsecaseImpl(cityRepository, ibgeClient)
 
 	if err := cityService.Import(ctx); err != nil {
-		log.Fatal("falha ao importar cidades: %v", err)
+		log.Fatal("falha ao importar cidades: %w", err)
 	}
 
 	log.Println("IBGE import successfully")
