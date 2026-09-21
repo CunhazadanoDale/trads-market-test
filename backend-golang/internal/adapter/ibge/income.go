@@ -21,7 +21,7 @@ func (c *Client) GetIncome2022(ctx context.Context) ([]dtos.IncomeSeries, error)
 	err := c.Get(ctx,
 		"/agregados/10295/periodos/2022/variaveis/13431",
 		query,
-		response)
+		&response)
 	if err != nil {
 		return nil, fmt.Errorf("get income 2022: %w", err)
 	}

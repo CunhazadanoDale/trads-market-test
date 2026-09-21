@@ -6,10 +6,11 @@ import (
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
+	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/in"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 )
 
-var _ out.IncomeRepository = (*IncomeUsecaseImpl)(nil)
+var _ in.IncomeUsecase = (*IncomeUsecaseImpl)(nil)
 
 const IncomeYear = 2022
 
@@ -26,7 +27,7 @@ func NewIncomeUsecaseImpl (repo out.IncomeRepository, ibgeClient *ibge.Client) *
 }
 
 // Upsert implements [out.IncomeRepository].
-func (i *IncomeUsecaseImpl) Upsert(ctx context.Context, ibgeCode int64, year int, averageIncome float64) error {
+func (i *IncomeUsecaseImpl) Import(ctx context.Context) error {
 	records, err := i.ibgeClient.GetIncome2022(ctx)
 	if err != nil {
 		return fmt.Errorf(
