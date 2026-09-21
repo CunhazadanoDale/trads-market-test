@@ -54,5 +54,14 @@ func main() {
 
 	log.Println("population imported succesffuly")
 
+	incomeRepository := postgres.NewIncomeRepo(db)
+	incomeService := usecases.NewIncomeUsecaseImpl(incomeRepository, ibgeClient)
+
+	if err := incomeService.Import(ctx); err != nil {
+		log.Fatalf("falha ao importar renda: %v", err)
+	}
+
+	log.Println("income imported successfully")
+
 	log.Println("IBGE import successfully")
 }
