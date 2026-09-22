@@ -69,7 +69,7 @@ func (c *CityUsecaseImpl) FindByState(
 	ctx context.Context,
 	stateIBGECode int64,
 	filter domain.PaginacaoFilter,
-) (domain.PaginacaoResponse[domain.City], error) {
+) (domain.PaginacaoResponse[domain.CityWithIndicators], error) {
 	filter = normalizePaginacao(filter)
 
 	cities, total, err := c.repo.FindByState(
@@ -79,16 +79,40 @@ func (c *CityUsecaseImpl) FindByState(
 		filter.Size,
 	)
 	if err != nil {
-		return domain.PaginacaoResponse[domain.City]{},
+		return domain.PaginacaoResponse[domain.CityWithIndicators]{},
 			fmt.Errorf("buscar cidades do estado %d: %w", stateIBGECode, err)
 	}
 
-	return domain.PaginacaoResponse[domain.City]{
+	if total == 0 {
+		exists, err := c.repo.StateExists(ctx, stateIBGECode)
+		if err != nil {
+			return domain.PaginacaoResponse[domain.CityWithIndicators]{},
+				fmt.Errorf("verificar estado %d: %w", stateIBGECode, err)
+		}
+
+		if !exists {
+			return domain.PaginacaoResponse[domain.CityWithIndicators]{}, domain.ErrStateNotFound
+		}
+	}
+
+	return domain.PaginacaoResponse[domain.CityWithIndicators]{
 		Dados: cities,
 		Page:  filter.Page,
 		Size:  filter.Size,
 		Total: total,
 	}, nil
+}
+
+func (c *CityUsecaseImpl) FindByIBGECode(
+	ctx context.Context,
+	ibgeCode int64,
+) (domain.CityDetail, error) {
+	detail, err := c.repo.FindDetailByIBGECode(ctx, ibgeCode)
+	if err != nil {
+		return domain.CityDetail{}, fmt.Errorf("buscar cidade %d: %w", ibgeCode, err)
+	}
+
+	return *detail, nil
 }
 
 // normalizePaginacao aplica os limites de paginacao:
