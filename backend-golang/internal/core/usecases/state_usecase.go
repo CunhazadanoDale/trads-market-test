@@ -46,3 +46,13 @@ func (s *StateUseCaseImpl) Import(ctx context.Context) error {
 
 	return nil
 }
+
+// FindAll implements [in.StateQueryUseCase].
+func (s *StateUseCaseImpl) FindAll(ctx context.Context) ([]domain.State, error) {
+	states, err := s.repo.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("buscar estados: %w", err)
+	}
+
+	return states, nil
+}

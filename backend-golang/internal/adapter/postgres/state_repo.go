@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,4 +44,48 @@ func (s *StateRepo) Upsert(ctx context.Context, state *domain.State) error {
 		state.Region,
 	)
 	return err
+}
+
+// FindAll implements [out.StatesRepository].
+func (s *StateRepo) FindAll(ctx context.Context) ([]domain.State, error) {
+	const query = `
+		SELECT
+			id,
+			ibge_code,
+			uf,
+			name,
+			region
+		FROM states
+		ORDER BY name
+	`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query states: %w", err)
+	}
+	defer rows.Close()
+
+	states := make([]domain.State, 0)
+
+	for rows.Next() {
+		var state domain.State
+
+		if err := rows.Scan(
+			&state.ID,
+			&state.IBGECode,
+			&state.UF,
+			&state.Name,
+			&state.Region,
+		); err != nil {
+			return nil, fmt.Errorf("scan state: %w", err)
+		}
+
+		states = append(states, state)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate states: %w", err)
+	}
+
+	return states, nil
 }
