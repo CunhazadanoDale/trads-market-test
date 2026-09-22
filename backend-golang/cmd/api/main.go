@@ -8,8 +8,10 @@ import (
 	"time"
 
 	appRouter "github.com/CunhazadanoDale/trads-market-test/internal/adapter/http"
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/postgres"
 	"github.com/CunhazadanoDale/trads-market-test/internal/config"
+	"github.com/CunhazadanoDale/trads-market-test/internal/core/usecases"
 )
 
 func main() {
@@ -29,7 +31,12 @@ func main() {
 	}
 	defer db.Close()
 
-	router := appRouter.NewRouter(db)
+	ibgeClient := ibge.NewIbgeClient(cfg.BaseUrlIBGE, cfg.BaseUrlLocalidades, http.DefaultClient)
+
+	stateRepository := postgres.NewStateRepo(db)
+	stateQueryUseCase := usecases.NewStateUseCase(stateRepository, ibgeClient)
+
+	router := appRouter.NewRouter(db, stateQueryUseCase)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
