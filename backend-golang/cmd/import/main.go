@@ -63,5 +63,17 @@ func main() {
 
 	log.Println("income imported successfully")
 
+	gdpRepository := postgres.NewGDPRepo(db)
+	gdpUseCase := usecases.NewGDPUsecaseImpl(
+		gdpRepository,
+		ibgeClient,
+	)
+
+	if err := gdpUseCase.Import(ctx); err != nil {
+		log.Fatalf("falha ao importar PIB: %v", err)
+	}
+
+	log.Println("GDP imported successfully")
+
 	log.Println("IBGE import successfully")
 }
