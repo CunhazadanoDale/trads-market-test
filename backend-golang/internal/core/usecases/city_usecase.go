@@ -57,3 +57,54 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 
 	return nil
 }
+
+const (
+	defaultPage     = 1
+	defaultPageSize = 20
+	maxPageSize     = 100
+)
+
+// FindByState implements [in.CityUseCase].
+func (c *CityUsecaseImpl) FindByState(
+	ctx context.Context,
+	stateIBGECode int64,
+	filter domain.PaginacaoFilter,
+) (domain.PaginacaoResponse[domain.City], error) {
+	filter = normalizePaginacao(filter)
+
+	cities, total, err := c.repo.FindByState(
+		ctx,
+		stateIBGECode,
+		filter.Page,
+		filter.Size,
+	)
+	if err != nil {
+		return domain.PaginacaoResponse[domain.City]{},
+			fmt.Errorf("buscar cidades do estado %d: %w", stateIBGECode, err)
+	}
+
+	return domain.PaginacaoResponse[domain.City]{
+		Dados: cities,
+		Page:  filter.Page,
+		Size:  filter.Size,
+		Total: total,
+	}, nil
+}
+
+// normalizePaginacao aplica os limites de paginacao:
+// page < 1 → 1, size < 1 → 20, size > 100 → 100.
+func normalizePaginacao(filter domain.PaginacaoFilter) domain.PaginacaoFilter {
+	if filter.Page < defaultPage {
+		filter.Page = defaultPage
+	}
+
+	if filter.Size < 1 {
+		filter.Size = defaultPageSize
+	}
+
+	if filter.Size > maxPageSize {
+		filter.Size = maxPageSize
+	}
+
+	return filter
+}
