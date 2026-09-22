@@ -1,0 +1,77 @@
+package ibge
+
+import (
+	"testing"
+
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
+)
+
+func TestGDPSeriesGDP(t *testing.T) {
+	record := dtos.GDPSeries{
+		Localidade: dtos.Localidade{
+			ID: "1100015",
+			Nivel: dtos.Nivel{
+				ID:   "N6",
+				Nome: "Município",
+			},
+			Nome: "Alta Floresta D'Oeste - RO",
+		},
+		Serie: map[string]string{
+			"2023": "1210.60",
+		},
+	}
+
+	gdp, err := record.GDP("2023")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if gdp != 1210.60 {
+		t.Fatalf(
+			"expected GDP 1210.60, got %f",
+			gdp,
+		)
+	}
+}
+
+func TestGDPSeriesGDPYearNotFound(t *testing.T) {
+	record := dtos.GDPSeries{
+		Localidade: dtos.Localidade{
+			ID: "1100015",
+			Nivel: dtos.Nivel{
+				ID:   "N6",
+				Nome: "Município",
+			},
+			Nome: "Alta Floresta D'Oeste - RO",
+		},
+		Serie: map[string]string{
+			"2023": "1210.60",
+		},
+	}
+
+	_, err := record.GDP("2022")
+	if err == nil {
+		t.Fatal("expected error when GDP year is not found")
+	}
+}
+
+func TestGDPSeriesGDPInvalidValue(t *testing.T) {
+	record := dtos.GDPSeries{
+		Localidade: dtos.Localidade{
+			ID: "1100015",
+			Nivel: dtos.Nivel{
+				ID:   "N6",
+				Nome: "Município",
+			},
+			Nome: "Alta Floresta D'Oeste - RO",
+		},
+		Serie: map[string]string{
+			"2023": "invalid",
+		},
+	}
+
+	_, err := record.GDP("2023")
+	if err == nil {
+		t.Fatal("expected error when GDP value is invalid")
+	}
+}
