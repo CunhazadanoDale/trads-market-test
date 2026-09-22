@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -32,10 +33,11 @@ func (h *CityHandler) FindByState(
 		64,
 	)
 	if err != nil {
-		http.Error(
+		writeError(
 			w,
-			"invalid state IBGE code",
 			http.StatusBadRequest,
+			CodeInvalidRequest,
+			"código IBGE do estado inválido",
 		)
 		return
 	}
@@ -51,10 +53,21 @@ func (h *CityHandler) FindByState(
 		filter,
 	)
 	if err != nil {
-		http.Error(
+		if errors.Is(err, domain.ErrStateNotFound) {
+			writeError(
+				w,
+				http.StatusNotFound,
+				CodeStateNotFound,
+				fmt.Sprintf("estado com código IBGE %d não encontrado", stateIBGECode),
+			)
+			return
+		}
+
+		writeError(
 			w,
-			"failed to find cities",
 			http.StatusInternalServerError,
+			CodeInternalError,
+			"falha ao buscar cidades",
 		)
 		return
 	}
@@ -70,15 +83,50 @@ func (h *CityHandler) FindByState(
 		response.Dados = append(response.Dados, dtos.NewCityResponse(city))
 	}
 
-	w.Header().Set(
-		"Content-Type",
-		"application/json",
-	)
-	w.WriteHeader(http.StatusOK)
+	writeJSON(w, http.StatusOK, response)
+}
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+func (h *CityHandler) FindByIBGECode(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	ibgeCode, err := strconv.ParseInt(
+		r.PathValue("ibgeCode"),
+		10,
+		64,
+	)
+	if err != nil {
+		writeError(
+			w,
+			http.StatusBadRequest,
+			CodeInvalidRequest,
+			"código IBGE do município inválido",
+		)
 		return
 	}
+
+	detail, err := h.useCase.FindByIBGECode(r.Context(), ibgeCode)
+	if err != nil {
+		if errors.Is(err, domain.ErrCityNotFound) {
+			writeError(
+				w,
+				http.StatusNotFound,
+				CodeCityNotFound,
+				fmt.Sprintf("município com código IBGE %d não encontrado", ibgeCode),
+			)
+			return
+		}
+
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			CodeInternalError,
+			"falha ao buscar município",
+		)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dtos.NewCityDetailResponse(detail))
 }
 
 func parseQueryInt(
