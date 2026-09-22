@@ -60,7 +60,12 @@ func (h *MetricsHandler) FindStates(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	metrics, err := h.useCase.FindStates(r.Context())
+	regiao, ok := parseRegion(w, r)
+	if !ok {
+		return
+	}
+
+	metrics, err := h.useCase.FindStates(r.Context(), regiao)
 	if err != nil {
 		writeError(
 			w,

@@ -47,7 +47,7 @@ func (s *StateRepo) Upsert(ctx context.Context, state *domain.State) error {
 }
 
 // FindAll implements [out.StatesRepository].
-func (s *StateRepo) FindAll(ctx context.Context) ([]domain.State, error) {
+func (s *StateRepo) FindAll(ctx context.Context, regiao string) ([]domain.State, error) {
 	const query = `
 		SELECT
 			id,
@@ -56,10 +56,11 @@ func (s *StateRepo) FindAll(ctx context.Context) ([]domain.State, error) {
 			name,
 			region
 		FROM states
+		WHERE ($1 = '' OR region = $1)
 		ORDER BY name
 	`
 
-	rows, err := s.db.Query(ctx, query)
+	rows, err := s.db.Query(ctx, query, regiao)
 	if err != nil {
 		return nil, fmt.Errorf("query states: %w", err)
 	}

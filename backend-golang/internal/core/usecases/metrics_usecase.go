@@ -28,8 +28,9 @@ func (m *MetricsUseCaseImpl) FindNational(
 
 func (m *MetricsUseCaseImpl) FindStates(
 	ctx context.Context,
+	regiao string,
 ) ([]domain.StateMetrics, error) {
-	return m.repo.FindStates(ctx)
+	return m.repo.FindStates(ctx, regiao)
 }
 
 func (m *MetricsUseCaseImpl) FindTopCities(

@@ -23,7 +23,12 @@ func (h *StateHandler) FindAll(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	states, err := h.useCase.FindAll(r.Context())
+	regiao, ok := parseRegion(w, r)
+	if !ok {
+		return
+	}
+
+	states, err := h.useCase.FindAll(r.Context(), regiao)
 	if err != nil {
 		writeError(
 			w,

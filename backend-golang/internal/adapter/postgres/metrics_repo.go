@@ -199,6 +199,7 @@ func (m *MetricsRepo) findGDPTotal(
 
 func (m *MetricsRepo) FindStates(
 	ctx context.Context,
+	regiao string,
 ) ([]domain.StateMetrics, error) {
 	const query = `
 		SELECT
@@ -210,11 +211,12 @@ func (m *MetricsRepo) FindStates(
 			COUNT(c.id) AS municipios
 		FROM states s
 		LEFT JOIN cities c ON c.state_id = s.id
+		WHERE ($1 = '' OR s.region = $1)
 		GROUP BY s.id, s.ibge_code, s.name, s.uf, s.region
 		ORDER BY s.name
 	`
 
-	rows, err := m.db.Query(ctx, query)
+	rows, err := m.db.Query(ctx, query, regiao)
 	if err != nil {
 		return nil, fmt.Errorf("query state metrics: %w", err)
 	}

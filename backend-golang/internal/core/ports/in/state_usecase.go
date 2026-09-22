@@ -8,5 +8,5 @@ import (
 
 type StateUseCase interface {
 	Import(ctx context.Context) error
-	FindAll(ctx context.Context) ([]domain.State, error)
+	FindAll(ctx context.Context, regiao string) ([]domain.State, error)
 }
