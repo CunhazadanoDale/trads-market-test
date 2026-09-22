@@ -8,14 +8,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewRouter(db *pgxpool.Pool, stateQueryUseCase in.StateUseCase) http.Handler {
+func NewRouter(
+	db *pgxpool.Pool,
+	stateUseCase in.StateUseCase,
+	cityUseCase in.CityUseCase,
+) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", handler.HealthHandler)
 	mux.HandleFunc("/health/db", handler.HealthHandlerWithDBCheck(db))
 
-	stateHandler := handler.NewStateHandler(stateQueryUseCase)
+	stateHandler := handler.NewStateHandler(stateUseCase)
 	mux.HandleFunc("GET /api/v1/states", stateHandler.FindAll)
+
+	cityHandler := handler.NewCityHandler(cityUseCase)
+	mux.HandleFunc("GET /api/v1/states/{ibgeCode}/cities", cityHandler.FindByState)
 
 	return mux
 }
