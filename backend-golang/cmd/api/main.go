@@ -17,11 +17,6 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	migrationsPath := "file://backend-golang/db/migrations"
-	if err := postgres.RunMigrations(cfg.DatabaseUrl, migrationsPath); err != nil {
-		log.Fatal(fmt.Errorf("erro ao rodar migrations: %w", err))
-	}
-
 	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
