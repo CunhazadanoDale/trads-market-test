@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BarChart2, Map, MapPin, RefreshCw } from 'lucide-react';
+import { Activity, BarChart2, Map as MapIcon, MapPin, RefreshCw } from 'lucide-react';
 import './Dashboard.css';
 import { Panel } from '../../app/components/Panel';
 import { StatusBadge } from '../../app/components/StatusBadge';
@@ -237,7 +237,7 @@ export default function Dashboard() {
           )}
         </Panel>
 
-        <Panel title="Estados (UF)" icon={<Map size={16} />}>
+        <Panel title="Estados (UF)" icon={<MapIcon size={16} />}>
           {states.length === 0 ? (
             <div className="loading-box">Carregando estados…</div>
           ) : (

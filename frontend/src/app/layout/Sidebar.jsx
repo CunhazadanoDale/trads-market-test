@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Map,
+  Map as MapIcon,
   MapPin,
   ChevronLeft,
   ChevronRight,
@@ -23,7 +23,7 @@ export function Sidebar() {
     {
       title: 'Localização (IBGE)',
       items: [
-        { label: 'Estados', icon: <Map size={18} />, path: '/estados' },
+        { label: 'Estados', icon: <MapIcon size={18} />, path: '/estados' },
         { label: 'Cidades', icon: <MapPin size={18} />, path: '/cidades' },
       ],
     },
