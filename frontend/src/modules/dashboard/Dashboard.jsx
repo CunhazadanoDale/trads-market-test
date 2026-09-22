@@ -1,14 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BarChart2, Map as MapIcon, MapPin, RefreshCw } from 'lucide-react';
+import { Activity, BarChart2, Map as MapIcon, MapPin, PieChart, RefreshCw, Users, Wallet } from 'lucide-react';
 import './Dashboard.css';
+import { DataGrid } from '../../app/components/DataGrid';
 import { Panel } from '../../app/components/Panel';
 import { StatusBadge } from '../../app/components/StatusBadge';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
 import { getCities } from '../../services/cities';
 import { getHealth } from '../../services/health';
+import { getAgeDistribution, getNationalMetrics, getStateMetrics, getTopCities } from '../../services/dashboard';
 import { API_BASE_URL } from '../../services/api';
+import { formatGDP, formatIncome, formatInteger, formatPercent, formatPopulation } from '../../utils/format';
 
 const CITIES_PANEL_SIZE = 8;
 
@@ -49,6 +52,11 @@ export default function Dashboard() {
     ({ signal }) => getCities(selectedIbge, { page: 1, pageSize: CITIES_PANEL_SIZE, signal }),
     [selectedIbge],
   );
+
+  const nationalRes = useApiResource(getNationalMetrics, []);
+  const stateMetricsRes = useApiResource(getStateMetrics, []);
+  const topCitiesRes = useApiResource(getTopCities, []);
+  const ageRes = useApiResource(getAgeDistribution, []);
 
   const selectedState = useMemo(
     () => states.find((state) => String(state.ibge_code) === selectedIbge) ?? null,
@@ -100,10 +108,105 @@ export default function Dashboard() {
     },
   ];
 
+  const national = nationalRes.data;
+  const nationalPending = nationalRes.loading && !national;
+
+  const yearHint = (indicator) => {
+    if (nationalPending) return '…';
+    return indicator ? `Ano ${indicator.year}` : 'sem dado';
+  };
+
+  const nationalCards = [
+    {
+      title: 'Municípios',
+      value: nationalPending ? '…' : national ? formatInteger(national.municipios) : '—',
+      hint: 'todo o país',
+    },
+    {
+      title: 'População',
+      value: nationalPending ? '…' : formatPopulation(national?.indicators?.population),
+      hint: yearHint(national?.indicators?.population),
+    },
+    {
+      title: 'Renda média',
+      value: nationalPending ? '…' : formatIncome(national?.indicators?.income),
+      hint: yearHint(national?.indicators?.income),
+    },
+    {
+      title: 'PIB (Mil R$)',
+      value: nationalPending ? '…' : formatGDP(national?.indicators?.gdp),
+      hint: yearHint(national?.indicators?.gdp),
+    },
+  ];
+
+  const stateMetrics = stateMetricsRes.data;
+
+  const stateMetricColumns = [
+    { label: 'UF', field: 'uf', width: '8%' },
+    { label: 'Estado', field: 'name', width: '24%' },
+    {
+      label: 'Municípios',
+      field: 'municipios',
+      width: '14%',
+      render: (value) => formatInteger(value),
+    },
+    {
+      label: 'População',
+      field: 'indicators',
+      width: '18%',
+      render: (value) => formatPopulation(value?.population),
+    },
+    {
+      label: 'Renda média',
+      field: 'indicators',
+      width: '18%',
+      render: (value) => formatIncome(value?.income),
+    },
+    {
+      label: 'PIB (Mil R$)',
+      field: 'indicators',
+      width: '18%',
+      render: (value) => formatGDP(value?.gdp),
+    },
+  ];
+
+  const rankings = [
+    {
+      title: 'Top PIB',
+      icon: <BarChart2 size={16} />,
+      cities: topCitiesRes.data?.top_pib,
+      pick: (city) => city.indicators?.gdp,
+      format: formatGDP,
+    },
+    {
+      title: 'Top renda',
+      icon: <Wallet size={16} />,
+      cities: topCitiesRes.data?.top_renda,
+      pick: (city) => city.indicators?.income,
+      format: formatIncome,
+    },
+    {
+      title: 'Top população',
+      icon: <Users size={16} />,
+      cities: topCitiesRes.data?.top_populacao,
+      pick: (city) => city.indicators?.population,
+      format: formatPopulation,
+    },
+  ];
+
+  const age = ageRes.data;
+  const ageGroups = useMemo(() => age?.grupos ?? [], [age]);
+  const maxAgePopulation =
+    ageGroups.length > 0 ? Math.max(...ageGroups.map((group) => group.populacao)) : 1;
+
   const handleRefresh = () => {
     statesRes.reload();
     healthRes.reload();
     citiesRes.reload();
+    nationalRes.reload();
+    stateMetricsRes.reload();
+    topCitiesRes.reload();
+    ageRes.reload();
   };
 
   return (
@@ -146,7 +249,7 @@ export default function Dashboard() {
       )}
 
       <div className="summary-cards">
-        {summaryCards.map((card) => (
+        {[...summaryCards, ...nationalCards].map((card) => (
           <div key={card.title} className="summary-card">
             <span className="summary-card-title">{card.title}</span>
             <span className="summary-card-value">{card.value}</span>
@@ -259,7 +362,88 @@ export default function Dashboard() {
             </>
           )}
         </Panel>
+
+        {rankings.map((ranking) => (
+          <Panel key={ranking.title} title={ranking.title} icon={ranking.icon}>
+            {topCitiesRes.loading && !topCitiesRes.data ? (
+              <div className="loading-box">Carregando ranking…</div>
+            ) : topCitiesRes.error ? (
+              <div className="error-box">
+                {topCitiesRes.error.message}
+                <button type="button" className="error-retry" onClick={topCitiesRes.reload}>
+                  Tentar novamente
+                </button>
+              </div>
+            ) : (
+              <ul className="city-list">
+                {(ranking.cities ?? []).map((city, index) => (
+                  <li key={city.ibge_code} className="city-item">
+                    <span className="city-ibge">#{index + 1}</span>
+                    <Link to={`/cidades/${city.ibge_code}`}>
+                      {city.name} ({city.state.uf})
+                    </Link>
+                    <span className="service-meta" style={{ marginLeft: 'auto' }}>
+                      {ranking.format(ranking.pick(city))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        ))}
       </div>
+
+      <Panel title="Distribuição por faixa etária" icon={<PieChart size={16} />}>
+        {ageRes.loading && !age ? (
+          <div className="loading-box">Carregando faixa etária…</div>
+        ) : ageRes.error ? (
+          <div className="error-box">
+            {ageRes.error.message}
+            <button type="button" className="error-retry" onClick={ageRes.reload}>
+              Tentar novamente
+            </button>
+          </div>
+        ) : ageGroups.length === 0 ? (
+          <div className="loading-box">Sem dado de faixa etária.</div>
+        ) : (
+          <>
+            <ul className="age-list">
+              {ageGroups.map((group) => (
+                <li key={group.faixa} className="age-item">
+                  <span className="age-name" title={group.faixa}>{group.faixa}</span>
+                  <span className="age-bar">
+                    <span
+                      className="age-bar-fill"
+                      style={{ width: `${(group.populacao / maxAgePopulation) * 100}%` }}
+                    />
+                  </span>
+                  <span className="age-count">
+                    {formatInteger(group.populacao)} · {formatPercent((group.populacao / age.total) * 100)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="panel-hint">
+              Total {formatInteger(age.total)} pessoas · Censo {age.ano} · IBGE/SIDRA 9514
+            </p>
+          </>
+        )}
+      </Panel>
+
+      <Panel title="UFs por indicador" icon={<MapIcon size={16} />}>
+        {stateMetricsRes.loading && !stateMetrics ? (
+          <div className="loading-box">Carregando indicadores por UF…</div>
+        ) : stateMetricsRes.error ? (
+          <div className="error-box">
+            {stateMetricsRes.error.message}
+            <button type="button" className="error-retry" onClick={stateMetricsRes.reload}>
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} selectable={false} />
+        )}
+      </Panel>
     </div>
   );
 }
