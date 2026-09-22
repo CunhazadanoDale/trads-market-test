@@ -1,0 +1,45 @@
+/* src/app/components/ApiStatus.css */
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 4px 10px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-panel);
+  cursor: pointer;
+}
+
+.api-status:hover {
+  background-color: var(--bg-app);
+}
+
+.api-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.api-status.ok {
+  color: var(--success-text);
+  background-color: var(--success-bg);
+  border-color: transparent;
+}
+
+.api-status.ok .api-status-dot {
+  background-color: #36b37e;
+}
+
+.api-status.down {
+  color: var(--danger-text);
+  background-color: var(--danger-bg);
+  border-color: transparent;
+}
+
+.api-status.down .api-status-dot {
+  background-color: #ff5630;
+}

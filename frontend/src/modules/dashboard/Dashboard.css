@@ -1,0 +1,250 @@
+/* src/modules/dashboard/Dashboard.css */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-panel);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.summary-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-panel);
+}
+
+.summary-card-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+
+.summary-card-value {
+  font-size: var(--font-size-xxl);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.summary-card-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Toolbar */
+.toolbar-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbar-label {
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  white-space: nowrap;
+}
+
+.dashboard-toolbar .toolbar-field .filter-select {
+  width: auto;
+  min-width: 220px;
+}
+
+/* Spin dos ícones de refresh */
+.spin {
+  animation: dashboard-spin 1s linear infinite;
+}
+
+@keyframes dashboard-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Painel: estados por região */
+.region-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.region-item {
+  display: grid;
+  grid-template-columns: 110px 1fr 32px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.region-name {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.region-bar {
+  height: 8px;
+  background-color: var(--neutral-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.region-bar-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: var(--radius-lg);
+}
+
+.region-count {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Painel: status dos serviços */
+.service-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: var(--font-size-md);
+}
+
+.service-item:last-child {
+  border-bottom: none;
+}
+
+.service-name {
+  color: var(--text-secondary);
+}
+
+.service-name code {
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  font-size: var(--font-size-sm);
+  color: var(--text-main);
+}
+
+.service-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Painel: lista de cidades */
+.city-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.city-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: var(--font-size-md);
+}
+
+.city-item:last-child {
+  border-bottom: none;
+}
+
+.city-ibge {
+  min-width: 70px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.city-name {
+  color: var(--text-main);
+}
+
+/* Painel: chips de UF */
+.uf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.uf-chip {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-panel);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.uf-chip:hover {
+  background-color: var(--bg-panel-hover);
+  border-color: var(--border-color-hover);
+  color: var(--text-main);
+}
+
+.uf-chip.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+
+/* Rodapé dos painéis */
+.panel-hint {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.panel-link {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.panel-link:hover {
+  text-decoration: underline;
+}
