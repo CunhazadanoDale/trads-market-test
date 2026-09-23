@@ -72,18 +72,48 @@ export default function Dashboard() {
     [states, selectedIbge],
   );
 
-  const regions = useMemo(() => {
-    const counts = new Map();
-    states.forEach((state) => {
-      counts.set(state.region, (counts.get(state.region) ?? 0) + 1);
-    });
+  const stateMetrics = stateMetricsRes.data;
 
-    return [...counts.entries()]
-      .map(([region, count]) => ({ region, count }))
-      .sort((a, b) => b.count - a.count || a.region.localeCompare(b.region));
-  }, [states]);
+  const regionMarkets = useMemo(() => {
+    const markets = new Map();
 
-  const maxRegionCount = regions.length > 0 ? regions[0].count : 1;
+    for (const item of stateMetrics ?? []) {
+      const market = markets.get(item.region) ?? {
+        region: item.region,
+        ufs: 0,
+        municipios: 0,
+        population: 0,
+        gdp: 0,
+        incomeWeighted: 0,
+        incomeBase: 0,
+      };
+
+      const population = item.indicators?.population?.value ?? 0;
+      const gdp = item.indicators?.gdp?.value ?? 0;
+      const income = item.indicators?.income?.value ?? 0;
+
+      market.ufs += 1;
+      market.municipios += item.municipios ?? 0;
+      market.population += population;
+      market.gdp += gdp;
+
+      if (population > 0 && income > 0) {
+        market.incomeWeighted += income * population;
+        market.incomeBase += population;
+      }
+
+      markets.set(item.region, market);
+    }
+
+    return [...markets.values()]
+      .map((market) => ({
+        ...market,
+        income: market.incomeBase > 0 ? market.incomeWeighted / market.incomeBase : 0,
+      }))
+      .sort((a, b) => b.population - a.population);
+  }, [stateMetrics]);
+
+  const maxRegionPopulation = regionMarkets.length > 0 ? regionMarkets[0].population : 1;
 
   const regionOptions = useMemo(
     () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
@@ -131,8 +161,8 @@ export default function Dashboard() {
     },
     {
       title: 'Regiões',
-      value: String(regions.length),
-      hint: 'agrupadas pelos estados',
+      value: stateMetricsRes.loading && regionMarkets.length === 0 ? '…' : String(regionMarkets.length),
+      hint: 'agregados por região',
     },
     {
       title: 'Status da API',
@@ -172,7 +202,6 @@ export default function Dashboard() {
     },
   ];
 
-  const stateMetrics = stateMetricsRes.data;
   const metricsCount = stateMetrics?.length ?? 0;
 
   const stateMetricColumns = [
@@ -300,24 +329,39 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
-        <Panel title="Estados por Região" icon={<BarChart2 size={16} />}>
-          {regions.length === 0 ? (
-            <div className="loading-box">Carregando regiões…</div>
+        <Panel title="Mercados por Região" icon={<BarChart2 size={16} />}>
+          {stateMetricsRes.loading && regionMarkets.length === 0 ? (
+            <div className="loading-box">Carregando mercados…</div>
+          ) : stateMetricsRes.error ? (
+            <div className="error-box">
+              {stateMetricsRes.error.message}
+              <button type="button" className="error-retry" onClick={stateMetricsRes.reload}>
+                Tentar novamente
+              </button>
+            </div>
           ) : (
-            <ul className="region-list">
-              {regions.map(({ region, count }) => (
-                <li key={region} className="region-item">
-                  <span className="region-name" title={region}>{region}</span>
-                  <span className="region-bar">
-                    <span
-                      className="region-bar-fill"
-                      style={{ width: `${(count / maxRegionCount) * 100}%` }}
-                    />
-                  </span>
-                  <span className="region-count">{count}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="region-list">
+                {regionMarkets.map((market) => (
+                  <li key={market.region} className="region-item">
+                    <span className="region-name" title={market.region}>{market.region}</span>
+                    <span className="region-bar">
+                      <span
+                        className="region-bar-fill"
+                        style={{ width: `${(market.population / maxRegionPopulation) * 100}%` }}
+                      />
+                    </span>
+                    <span className="region-count">{formatPopulation({ value: market.population })}</span>
+                    <span className="region-meta">
+                      {market.ufs} UFs · {formatInteger(market.municipios)} municípios · PIB (Mil R$) {formatGDP({ value: market.gdp })} · renda média {formatIncome({ value: market.income })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="panel-hint">
+                Ordenado por população · barra proporcional à maior região · renda média ponderada pela população de cada UF.
+              </p>
+            </>
           )}
         </Panel>
 
