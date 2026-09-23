@@ -4,8 +4,14 @@ export function getNationalMetrics({ signal } = {}) {
   return api.get('/api/v1/dashboard/national', { signal });
 }
 
-export function getStateMetrics({ signal } = {}) {
-  return api.get('/api/v1/dashboard/states', { signal });
+export function getStateMetrics({ regiao = '', signal } = {}) {
+  const params = new URLSearchParams();
+
+  if (regiao) params.set('regiao', regiao);
+
+  const query = params.toString();
+
+  return api.get(`/api/v1/dashboard/states${query ? `?${query}` : ''}`, { signal });
 }
 
 export function getTopCities({ signal } = {}) {

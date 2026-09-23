@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [rawIbge, setRawIbge] = useState('');
   const [ageRegion, setAgeRegion] = useState('');
   const [ageIbge, setAgeIbge] = useState('');
+  const [metricsRegion, setMetricsRegion] = useState('');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
   const selectedIbge = rawIbge || (states.length > 0 ? String(states[0].ibge_code) : '');
@@ -56,7 +57,10 @@ export default function Dashboard() {
   );
 
   const nationalRes = useApiResource(getNationalMetrics, []);
-  const stateMetricsRes = useApiResource(getStateMetrics, []);
+  const stateMetricsRes = useApiResource(
+    ({ signal }) => getStateMetrics({ regiao: metricsRegion, signal }),
+    [metricsRegion],
+  );
   const topCitiesRes = useApiResource(getTopCities, []);
   const ageRes = useApiResource(
     ({ signal }) => getAgeDistribution({ regiao: ageRegion, ibge: ageIbge, signal }),
@@ -81,7 +85,7 @@ export default function Dashboard() {
 
   const maxRegionCount = regions.length > 0 ? regions[0].count : 1;
 
-  const ageRegions = useMemo(
+  const regionOptions = useMemo(
     () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
     [states],
   );
@@ -169,6 +173,7 @@ export default function Dashboard() {
   ];
 
   const stateMetrics = stateMetricsRes.data;
+  const metricsCount = stateMetrics?.length ?? 0;
 
   const stateMetricColumns = [
     { label: 'UF', field: 'uf', width: '8%' },
@@ -430,7 +435,7 @@ export default function Dashboard() {
       </div>
 
       <Panel title="Distribuição por faixa etária" icon={<PieChart size={16} />}>
-        <div className="age-controls">
+        <div className="panel-controls">
           <div className="toolbar-field">
             <label className="toolbar-label" htmlFor="age-region-filter">Região</label>
             <select
@@ -440,7 +445,7 @@ export default function Dashboard() {
               onChange={(event) => handleAgeRegionChange(event.target.value)}
             >
               <option value="">Todas</option>
-              {ageRegions.map((region) => (
+              {regionOptions.map((region) => (
                 <option key={region} value={region}>{region}</option>
               ))}
             </select>
@@ -499,6 +504,22 @@ export default function Dashboard() {
       </Panel>
 
       <Panel title="UFs por indicador" icon={<MapIcon size={16} />}>
+        <div className="panel-controls">
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="metrics-region-filter">Região</label>
+            <select
+              id="metrics-region-filter"
+              className="filter-select"
+              value={metricsRegion}
+              onChange={(event) => setMetricsRegion(event.target.value)}
+            >
+              <option value="">Todas</option>
+              {regionOptions.map((region) => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         {stateMetricsRes.loading && !stateMetrics ? (
           <div className="loading-box">Carregando indicadores por UF…</div>
         ) : stateMetricsRes.error ? (
@@ -509,7 +530,12 @@ export default function Dashboard() {
             </button>
           </div>
         ) : (
-          <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} selectable={false} />
+          <>
+            <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} selectable={false} />
+            <p className="panel-hint">
+              {metricsCount} UF{metricsCount === 1 ? '' : 's'} · {metricsRegion ? `Região ${metricsRegion}` : 'todo o país'}
+            </p>
+          </>
         )}
       </Panel>
     </div>
