@@ -9,6 +9,20 @@ import { getStates } from '../../services/states';
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, getCities } from '../../services/cities';
 import { formatGDP, formatIncome, formatPopulation } from '../../utils/format';
 
+const EMPTY_CITY_FILTERS = { nome: '', ordenar: '', ordem: 'asc' };
+
+const ORDER_OPTIONS = [
+  { value: '', label: 'Nome' },
+  { value: 'populacao', label: 'População' },
+  { value: 'renda', label: 'Renda' },
+  { value: 'pib', label: 'PIB' },
+];
+
+const DIRECTION_OPTIONS = [
+  { value: 'asc', label: 'Crescente' },
+  { value: 'desc', label: 'Decrescente' },
+];
+
 export default function Cities() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,6 +35,8 @@ export default function Cities() {
   const [rawSelected, setRawSelected] = useState(() => String(location.state?.ibge ?? ''));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [draftFilters, setDraftFilters] = useState(EMPTY_CITY_FILTERS);
+  const [filters, setFilters] = useState(EMPTY_CITY_FILTERS);
 
   const selected = rawSelected || (states.length > 0 ? String(states[0].ibge_code) : '');
 
@@ -40,8 +56,8 @@ export default function Cities() {
   };
 
   const citiesRes = useApiResource(
-    ({ signal }) => getCities(selected, { page, pageSize, signal }),
-    [selected, page, pageSize],
+    ({ signal }) => getCities(selected, { page, pageSize, signal, ...filters }),
+    [selected, page, pageSize, filters],
   );
 
   const cities = citiesRes.data;
@@ -83,9 +99,15 @@ export default function Cities() {
     },
   ];
 
-  const handleApply = () => citiesRes.reload();
+  const handleApply = () => {
+    setPage(1);
+    setFilters(draftFilters);
+    citiesRes.reload();
+  };
 
   const handleClear = () => {
+    setDraftFilters(EMPTY_CITY_FILTERS);
+    setFilters(EMPTY_CITY_FILTERS);
     handleStateChange(states.length > 0 ? String(states[0].ibge_code) : '');
     handlePageSizeChange(DEFAULT_PAGE_SIZE);
   };
@@ -200,6 +222,37 @@ export default function Cities() {
               <option key={state.ibge_code} value={String(state.ibge_code)}>
                 {`${state.uf} — ${state.name}`}
               </option>
+            ))}
+          </select>
+        </FilterGroup>
+        <FilterGroup label="Nome da cidade">
+          <input
+            type="text"
+            className="filter-input"
+            placeholder="Ex.: são"
+            value={draftFilters.nome}
+            onChange={(event) => setDraftFilters({ ...draftFilters, nome: event.target.value })}
+          />
+        </FilterGroup>
+        <FilterGroup label="Ordenar por">
+          <select
+            className="filter-select"
+            value={draftFilters.ordenar}
+            onChange={(event) => setDraftFilters({ ...draftFilters, ordenar: event.target.value })}
+          >
+            {ORDER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </FilterGroup>
+        <FilterGroup label="Ordem">
+          <select
+            className="filter-select"
+            value={draftFilters.ordem}
+            onChange={(event) => setDraftFilters({ ...draftFilters, ordem: event.target.value })}
+          >
+            {DIRECTION_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </FilterGroup>

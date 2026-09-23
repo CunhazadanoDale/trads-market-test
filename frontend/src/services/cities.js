@@ -13,7 +13,10 @@ export const PAGE_SIZE_OPTIONS = [20, 50, 100];
  * @param {number|string} stateIbgeCode código IBGE da UF (path param)
  * @returns {Promise<{ dados: Array, pagina: number, tamanho: number, total: number }>}
  */
-export async function getCities(stateIbgeCode, { page = 1, pageSize = DEFAULT_PAGE_SIZE, signal } = {}) {
+export async function getCities(
+  stateIbgeCode,
+  { page = 1, pageSize = DEFAULT_PAGE_SIZE, nome = '', ordenar = '', ordem = '', signal } = {},
+) {
   if (!stateIbgeCode) {
     return { dados: [], pagina: 1, tamanho: pageSize, total: 0 };
   }
@@ -22,6 +25,10 @@ export async function getCities(stateIbgeCode, { page = 1, pageSize = DEFAULT_PA
     page: String(page),
     pageSize: String(pageSize),
   });
+
+  if (nome) params.set('nome', nome);
+  if (ordenar) params.set('ordenar', ordenar);
+  if (ordem) params.set('ordem', ordem);
 
   const response = await api.get(
     `/api/v1/states/${stateIbgeCode}/cities?${params.toString()}`,
