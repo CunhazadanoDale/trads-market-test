@@ -77,9 +77,6 @@ func (c *CityRepo) FindByState(
 	stateIBGECode int64,
 	filter domain.PaginacaoFilter,
 ) ([]domain.CityWithIndicators, int, error) {
-	// Cláusulas compartilhadas: contagem e listagem precisam do mesmo
-	// FROM/WHERE (e mesmo LEFT JOIN de ordenação), senão a paginação
-	// dessincroniza (total ≠ lista).
 	join, orderBy := citySortClauses(filter)
 
 	from := `FROM cities c
@@ -209,9 +206,6 @@ func (c *CityRepo) FindByState(
 	return result, total, nil
 }
 
-// citySortClauses monta o LEFT JOIN da tabela de indicador e o ORDER BY
-// conforme o filtro. Ordenação por indicador usa NULLS LAST: cidade sem
-// indicador não pode subir ao topo do ranking.
 func citySortClauses(filter domain.PaginacaoFilter) (join string, orderBy string) {
 	direction := "ASC"
 	if filter.Ordem == "desc" {
@@ -242,7 +236,6 @@ func citySortClauses(filter domain.PaginacaoFilter) (join string, orderBy string
 	}
 }
 
-// escapeLike neutraliza curingas do ILIKE para a busca ser literal.
 func escapeLike(value string) string {
 	value = strings.ReplaceAll(value, `\`, `\\`)
 	value = strings.ReplaceAll(value, `%`, `\%`)

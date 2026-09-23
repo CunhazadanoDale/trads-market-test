@@ -8,7 +8,6 @@ import (
 )
 
 type fakeMetricsRepository struct {
-	// guardas do último FindAgeDistribution
 	regiaoRecebida string
 	ibgeRecebido   int64
 	chamouFind     bool

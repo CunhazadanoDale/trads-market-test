@@ -64,7 +64,6 @@ const (
 	maxPageSize     = 100
 )
 
-// ordenarPermitido limita o query param ?ordenar= às colunas de indicador.
 var ordenarPermitido = map[string]bool{
 	"":          true,
 	"populacao": true,
@@ -72,7 +71,6 @@ var ordenarPermitido = map[string]bool{
 	"pib":       true,
 }
 
-// ordemPermitida limita o query param ?ordem= às direções suportadas.
 var ordemPermitida = map[string]bool{
 	"":    true,
 	"asc": true,

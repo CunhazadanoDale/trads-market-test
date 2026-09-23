@@ -66,8 +66,6 @@ func (m *MetricsRepo) FindAgeDistribution(
 	regiao string,
 	ibgeCode int64,
 ) (domain.AgeDistribution, error) {
-	// Os JOINs permitem recortar por região/UF; a janela OVER () calcula o
-	// total do recorte (só o GROUP BY que sobreviveu ao WHERE).
 	const query = `
 		SELECT
 			a.year,
@@ -123,8 +121,6 @@ func (m *MetricsRepo) FindAgeDistribution(
 	}
 
 	if len(distribution.Groups) == 0 {
-		// Recorte por UF sem dados: o estado não existe (ou não tem idade).
-		// Região sempre existe (validada no handler) — vazio ali é erro de dados.
 		if ibgeCode != 0 {
 			return domain.AgeDistribution{}, domain.ErrStateNotFound
 		}

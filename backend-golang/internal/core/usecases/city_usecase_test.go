@@ -12,7 +12,6 @@ type fakeCityRepository struct {
 	cities []domain.CityWithIndicators
 	total  int
 
-	// guardas do último FindByState
 	filtroRecebido domain.PaginacaoFilter
 	chamouFind     bool
 }
