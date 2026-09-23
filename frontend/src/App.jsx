@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './app/layout/AppShell';
 
 import Dashboard from './modules/dashboard/Dashboard';
+import Mercados from './modules/mercados/Mercados';
 import Publico from './modules/publico/Publico';
 import States from './modules/states/States';
 import Cities from './modules/cities/Cities';
@@ -12,6 +13,7 @@ function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/mercados" element={<Mercados />} />
         <Route path="/publico" element={<Publico />} />
         <Route path="/estados" element={<States />} />
         <Route path="/cidades" element={<Cities />} />

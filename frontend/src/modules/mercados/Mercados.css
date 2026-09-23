@@ -1,0 +1,94 @@
+.mercados-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.mercados-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mercados-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.mercados-subtitle {
+  max-width: 90ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.mercados-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.mercados-guide-item dt {
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.mercados-guide-item dd {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.region-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.region-item {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--font-size-md);
+}
+
+.region-meta {
+  grid-column: 1 / -1;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.region-name {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.region-bar {
+  height: 8px;
+  background-color: var(--neutral-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.region-bar-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: var(--radius-lg);
+}
+
+.region-count {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

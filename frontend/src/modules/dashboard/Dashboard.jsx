@@ -2,14 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, BarChart2, Map as MapIcon, MapPin, RefreshCw, Users, Wallet } from 'lucide-react';
 import './Dashboard.css';
-import { DataGrid } from '../../app/components/DataGrid';
 import { Panel } from '../../app/components/Panel';
 import { StatusBadge } from '../../app/components/StatusBadge';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
 import { getCities } from '../../services/cities';
 import { getHealth } from '../../services/health';
-import { getNationalMetrics, getStateMetrics, getTopCities } from '../../services/dashboard';
+import { getNationalMetrics, getTopCities } from '../../services/dashboard';
 import { API_BASE_URL } from '../../services/api';
 import { formatGDP, formatIncome, formatInteger, formatPopulation } from '../../utils/format';
 
@@ -44,7 +43,6 @@ export default function Dashboard() {
   const healthRes = useApiResource(getHealth, []);
   // Estado escolhido; quando vazio, vale o primeiro da lista (derivado)
   const [rawIbge, setRawIbge] = useState('');
-  const [metricsRegion, setMetricsRegion] = useState('');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
   const selectedIbge = rawIbge || (states.length > 0 ? String(states[0].ibge_code) : '');
@@ -55,63 +53,11 @@ export default function Dashboard() {
   );
 
   const nationalRes = useApiResource(getNationalMetrics, []);
-  const stateMetricsRes = useApiResource(
-    ({ signal }) => getStateMetrics({ regiao: metricsRegion, signal }),
-    [metricsRegion],
-  );
   const topCitiesRes = useApiResource(getTopCities, []);
 
   const selectedState = useMemo(
     () => states.find((state) => String(state.ibge_code) === selectedIbge) ?? null,
     [states, selectedIbge],
-  );
-
-  const stateMetrics = stateMetricsRes.data;
-
-  const regionMarkets = useMemo(() => {
-    const markets = new Map();
-
-    for (const item of stateMetrics ?? []) {
-      const market = markets.get(item.region) ?? {
-        region: item.region,
-        ufs: 0,
-        municipios: 0,
-        population: 0,
-        gdp: 0,
-        incomeWeighted: 0,
-        incomeBase: 0,
-      };
-
-      const population = item.indicators?.population?.value ?? 0;
-      const gdp = item.indicators?.gdp?.value ?? 0;
-      const income = item.indicators?.income?.value ?? 0;
-
-      market.ufs += 1;
-      market.municipios += item.municipios ?? 0;
-      market.population += population;
-      market.gdp += gdp;
-
-      if (population > 0 && income > 0) {
-        market.incomeWeighted += income * population;
-        market.incomeBase += population;
-      }
-
-      markets.set(item.region, market);
-    }
-
-    return [...markets.values()]
-      .map((market) => ({
-        ...market,
-        income: market.incomeBase > 0 ? market.incomeWeighted / market.incomeBase : 0,
-      }))
-      .sort((a, b) => b.population - a.population);
-  }, [stateMetrics]);
-
-  const maxRegionPopulation = regionMarkets.length > 0 ? regionMarkets[0].population : 1;
-
-  const regionOptions = useMemo(
-    () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
-    [states],
   );
 
   const health = healthRes.data;
@@ -133,11 +79,6 @@ export default function Dashboard() {
           ? '…'
           : String(citiesRes.data?.total ?? 0),
       hint: 'total do estado selecionado',
-    },
-    {
-      title: 'Regiões',
-      value: stateMetricsRes.loading && regionMarkets.length === 0 ? '…' : String(regionMarkets.length),
-      hint: 'agregados por região',
     },
     {
       title: 'Status da API',
@@ -177,37 +118,6 @@ export default function Dashboard() {
     },
   ];
 
-  const metricsCount = stateMetrics?.length ?? 0;
-
-  const stateMetricColumns = [
-    { label: 'UF', field: 'uf', width: '8%' },
-    { label: 'Estado', field: 'name', width: '24%' },
-    {
-      label: 'Municípios',
-      field: 'municipios',
-      width: '14%',
-      render: (value) => formatInteger(value),
-    },
-    {
-      label: 'População',
-      field: 'indicators',
-      width: '18%',
-      render: (value) => formatPopulation(value?.population),
-    },
-    {
-      label: 'Renda média',
-      field: 'indicators',
-      width: '18%',
-      render: (value) => formatIncome(value?.income),
-    },
-    {
-      label: 'PIB (Mil R$)',
-      field: 'indicators',
-      width: '18%',
-      render: (value) => formatGDP(value?.gdp),
-    },
-  ];
-
   const rankings = [
     {
       title: 'Top PIB',
@@ -237,7 +147,6 @@ export default function Dashboard() {
     healthRes.reload();
     citiesRes.reload();
     nationalRes.reload();
-    stateMetricsRes.reload();
     topCitiesRes.reload();
   };
 
@@ -291,42 +200,6 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
-        <Panel title="Mercados por Região" icon={<BarChart2 size={16} />}>
-          {stateMetricsRes.loading && regionMarkets.length === 0 ? (
-            <div className="loading-box">Carregando mercados…</div>
-          ) : stateMetricsRes.error ? (
-            <div className="error-box">
-              {stateMetricsRes.error.message}
-              <button type="button" className="error-retry" onClick={stateMetricsRes.reload}>
-                Tentar novamente
-              </button>
-            </div>
-          ) : (
-            <>
-              <ul className="region-list">
-                {regionMarkets.map((market) => (
-                  <li key={market.region} className="region-item">
-                    <span className="region-name" title={market.region}>{market.region}</span>
-                    <span className="region-bar">
-                      <span
-                        className="region-bar-fill"
-                        style={{ width: `${(market.population / maxRegionPopulation) * 100}%` }}
-                      />
-                    </span>
-                    <span className="region-count">{formatPopulation({ value: market.population })}</span>
-                    <span className="region-meta">
-                      {market.ufs} UFs · {formatInteger(market.municipios)} municípios · PIB (Mil R$) {formatGDP({ value: market.gdp })} · renda média {formatIncome({ value: market.income })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="panel-hint">
-                Ordenado por população · barra proporcional à maior região · renda média ponderada pela população de cada UF.
-              </p>
-            </>
-          )}
-        </Panel>
-
         <Panel
           title="Status dos Serviços"
           icon={<Activity size={16} />}
@@ -440,41 +313,6 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <Panel title="UFs por indicador" icon={<MapIcon size={16} />}>
-        <div className="panel-controls">
-          <div className="toolbar-field">
-            <label className="toolbar-label" htmlFor="metrics-region-filter">Região</label>
-            <select
-              id="metrics-region-filter"
-              className="filter-select"
-              value={metricsRegion}
-              onChange={(event) => setMetricsRegion(event.target.value)}
-            >
-              <option value="">Todas</option>
-              {regionOptions.map((region) => (
-                <option key={region} value={region}>{region}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {stateMetricsRes.loading && !stateMetrics ? (
-          <div className="loading-box">Carregando indicadores por UF…</div>
-        ) : stateMetricsRes.error ? (
-          <div className="error-box">
-            {stateMetricsRes.error.message}
-            <button type="button" className="error-retry" onClick={stateMetricsRes.reload}>
-              Tentar novamente
-            </button>
-          </div>
-        ) : (
-          <>
-            <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} selectable={false} />
-            <p className="panel-hint">
-              {metricsCount} UF{metricsCount === 1 ? '' : 's'} · {metricsRegion ? `Região ${metricsRegion}` : 'todo o país'}
-            </p>
-          </>
-        )}
-      </Panel>
     </div>
   );
 }

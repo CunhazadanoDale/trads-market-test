@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  Globe,
   LayoutDashboard,
   Map as MapIcon,
   MapPin,
@@ -24,6 +25,7 @@ export function Sidebar() {
     {
       title: 'Inteligência de Mercado',
       items: [
+        { label: 'Mercados', icon: <Globe size={18} />, path: '/mercados' },
         { label: 'Público', icon: <Users size={18} />, path: '/publico' },
       ],
     },
