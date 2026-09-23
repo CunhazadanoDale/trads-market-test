@@ -43,8 +43,11 @@ func (h *CityHandler) FindByState(
 	}
 
 	filter := domain.PaginacaoFilter{
-		Page: parseQueryInt(r, "page", 1),
-		Size: parseQueryInt(r, "pageSize", 20),
+		Page:    parseQueryInt(r, "page", 1),
+		Size:    parseQueryInt(r, "pageSize", 20),
+		Nome:    r.URL.Query().Get("nome"),
+		Ordenar: r.URL.Query().Get("ordenar"),
+		Ordem:   r.URL.Query().Get("ordem"),
 	}
 
 	result, err := h.useCase.FindByState(
@@ -59,6 +62,26 @@ func (h *CityHandler) FindByState(
 				http.StatusNotFound,
 				CodeStateNotFound,
 				fmt.Sprintf("estado com código IBGE %d não encontrado", stateIBGECode),
+			)
+			return
+		}
+
+		if errors.Is(err, domain.ErrInvalidOrdenar) {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"ordenar deve ser populacao, renda ou pib",
+			)
+			return
+		}
+
+		if errors.Is(err, domain.ErrInvalidOrdem) {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"ordem deve ser asc ou desc",
 			)
 			return
 		}

@@ -37,14 +37,14 @@ func TestStateHandlerFindAll(t *testing.T) {
 	}
 
 	tests := []struct {
-		nome         string
-		query        string
-		estados      []domain.State
-		wantStatus   int
-		wantRegiao   string
-		wantChamou   bool
-		wantCode     string
-		wantTamanho  int
+		nome        string
+		query       string
+		estados     []domain.State
+		wantStatus  int
+		wantRegiao  string
+		wantChamou  bool
+		wantCode    string
+		wantTamanho int
 	}{
 		{
 			nome:        "regiao valida filtra e devolve 200",

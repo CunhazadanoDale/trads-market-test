@@ -11,8 +11,7 @@ type CityRepository interface {
 	FindByState(
 		ctx context.Context,
 		stateIBGECode int64,
-		page int,
-		pageSize int,
+		filter domain.PaginacaoFilter,
 	) ([]domain.CityWithIndicators, int, error)
 	StateExists(ctx context.Context, stateIBGECode int64) (bool, error)
 	FindDetailByIBGECode(ctx context.Context, ibgeCode int64) (*domain.CityDetail, error)

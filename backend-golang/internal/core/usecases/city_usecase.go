@@ -64,6 +64,21 @@ const (
 	maxPageSize     = 100
 )
 
+// ordenarPermitido limita o query param ?ordenar= às colunas de indicador.
+var ordenarPermitido = map[string]bool{
+	"":          true,
+	"populacao": true,
+	"renda":     true,
+	"pib":       true,
+}
+
+// ordemPermitida limita o query param ?ordem= às direções suportadas.
+var ordemPermitida = map[string]bool{
+	"":    true,
+	"asc": true,
+	"desc": true,
+}
+
 // FindByState implements [in.CityUseCase].
 func (c *CityUsecaseImpl) FindByState(
 	ctx context.Context,
@@ -72,11 +87,20 @@ func (c *CityUsecaseImpl) FindByState(
 ) (domain.PaginacaoResponse[domain.CityWithIndicators], error) {
 	filter = normalizePaginacao(filter)
 
+	if !ordenarPermitido[filter.Ordenar] {
+		return domain.PaginacaoResponse[domain.CityWithIndicators]{},
+			domain.ErrInvalidOrdenar
+	}
+
+	if !ordemPermitida[filter.Ordem] {
+		return domain.PaginacaoResponse[domain.CityWithIndicators]{},
+			domain.ErrInvalidOrdem
+	}
+
 	cities, total, err := c.repo.FindByState(
 		ctx,
 		stateIBGECode,
-		filter.Page,
-		filter.Size,
+		filter,
 	)
 	if err != nil {
 		return domain.PaginacaoResponse[domain.CityWithIndicators]{},

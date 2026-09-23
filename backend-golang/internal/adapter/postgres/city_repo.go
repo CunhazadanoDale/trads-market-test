@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
@@ -74,22 +75,32 @@ func (c *CityRepo) StateExists(ctx context.Context, stateIBGECode int64) (bool, 
 func (c *CityRepo) FindByState(
 	ctx context.Context,
 	stateIBGECode int64,
-	page int,
-	pageSize int,
+	filter domain.PaginacaoFilter,
 ) ([]domain.CityWithIndicators, int, error) {
-	const countQuery = `
-		SELECT COUNT(*)
-		FROM cities c
-		INNER JOIN states s ON s.id = c.state_id
-		WHERE s.ibge_code = $1
-	`
+	// Cláusulas compartilhadas: contagem e listagem precisam do mesmo
+	// FROM/WHERE (e mesmo LEFT JOIN de ordenação), senão a paginação
+	// dessincroniza (total ≠ lista).
+	join, orderBy := citySortClauses(filter)
+
+	from := `FROM cities c
+		INNER JOIN states s ON s.id = c.state_id` + join
+
+	where := `WHERE s.ibge_code = $1`
+	args := []any{stateIBGECode}
+
+	if filter.Nome != "" {
+		where += ` AND c.name ILIKE $2`
+		args = append(args, "%"+escapeLike(filter.Nome)+"%")
+	}
+
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) %s %s`, from, where)
 
 	var total int
 
 	if err := c.db.QueryRow(
 		ctx,
 		countQuery,
-		stateIBGECode,
+		args...,
 	).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf(
 			"count cities by state: %w",
@@ -97,28 +108,33 @@ func (c *CityRepo) FindByState(
 		)
 	}
 
-	const query = `
+	listQuery := fmt.Sprintf(`
 		SELECT
 			c.id,
 			c.ibge_code,
 			c.name,
 			c.state_id
-		FROM cities c
-		INNER JOIN states s ON s.id = c.state_id
-		WHERE s.ibge_code = $1
-		ORDER BY c.name
-		LIMIT $2
-		OFFSET $3
-	`
+		%s
+		%s
+		%s
+		LIMIT $%d
+		OFFSET $%d
+	`,
+		from,
+		where,
+		orderBy,
+		len(args)+1,
+		len(args)+2,
+	)
 
-	offset := (page - 1) * pageSize
+	offset := (filter.Page - 1) * filter.Size
+	listArgs := append([]any{}, args...)
+	listArgs = append(listArgs, filter.Size, offset)
 
 	rows, err := c.db.Query(
 		ctx,
-		query,
-		stateIBGECode,
-		pageSize,
-		offset,
+		listQuery,
+		listArgs...,
 	)
 	if err != nil {
 		return nil, 0, fmt.Errorf(
@@ -191,6 +207,47 @@ func (c *CityRepo) FindByState(
 	}
 
 	return result, total, nil
+}
+
+// citySortClauses monta o LEFT JOIN da tabela de indicador e o ORDER BY
+// conforme o filtro. Ordenação por indicador usa NULLS LAST: cidade sem
+// indicador não pode subir ao topo do ranking.
+func citySortClauses(filter domain.PaginacaoFilter) (join string, orderBy string) {
+	direction := "ASC"
+	if filter.Ordem == "desc" {
+		direction = "DESC"
+	}
+
+	switch filter.Ordenar {
+	case "populacao":
+		return `
+		LEFT JOIN population_indicators p
+			ON p.city_id = c.id
+			AND p.year = (SELECT MAX(year) FROM population_indicators)`,
+			"ORDER BY p.value " + direction + " NULLS LAST, c.name ASC"
+	case "renda":
+		return `
+		LEFT JOIN income_indicators i
+			ON i.city_id = c.id
+			AND i.year = (SELECT MAX(year) FROM income_indicators)`,
+			"ORDER BY i.average_income " + direction + " NULLS LAST, c.name ASC"
+	case "pib":
+		return `
+		LEFT JOIN gdp_indicators g
+			ON g.city_id = c.id
+			AND g.year = (SELECT MAX(year) FROM gdp_indicators)`,
+			"ORDER BY g.gdp " + direction + " NULLS LAST, c.name ASC"
+	default:
+		return "", "ORDER BY c.name " + direction
+	}
+}
+
+// escapeLike neutraliza curingas do ILIKE para a busca ser literal.
+func escapeLike(value string) string {
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	value = strings.ReplaceAll(value, `%`, `\%`)
+	value = strings.ReplaceAll(value, `_`, `\_`)
+	return value
 }
 
 func (c *CityRepo) findPopulationsByCityIDs(
