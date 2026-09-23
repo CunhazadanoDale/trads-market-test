@@ -71,10 +71,19 @@ func (m *MetricsRepo) FindAgeDistribution(
 			a.year,
 			a.age_group,
 			SUM(a.population) AS population,
-			SUM(SUM(a.population)) OVER () AS total
+			SUM(SUM(a.population)) OVER () AS total,
+			CASE
+				WHEN SUM(a.population) > 0
+				THEN ROUND((
+					SUM(i.average_income * a.population) / SUM(a.population)
+				)::numeric, 2)
+				ELSE 0::numeric
+			END AS average_city_income
 		FROM age_indicators a
 		INNER JOIN cities c ON c.id = a.city_id
 		INNER JOIN states s ON s.id = c.state_id
+		INNER JOIN income_indicators i
+			ON i.city_id = a.city_id AND i.year = a.year
 		WHERE a.year = (SELECT MAX(year) FROM age_indicators)
 			AND ($1 = '' OR s.region = $1)
 			AND ($2 = 0 OR s.ibge_code = $2)
@@ -103,6 +112,7 @@ func (m *MetricsRepo) FindAgeDistribution(
 			&group.AgeGroup,
 			&group.Population,
 			&distribution.Total,
+			&group.AverageCityIncome,
 		); err != nil {
 			return domain.AgeDistribution{}, fmt.Errorf(
 				"scan age distribution: %w",

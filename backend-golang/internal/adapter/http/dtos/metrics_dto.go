@@ -33,8 +33,9 @@ func NewTopCitiesResponse(top domain.TopCities) TopCitiesResponse {
 }
 
 type AgeGroupResponse struct {
-	AgeGroup   string `json:"faixa"`
-	Population int64  `json:"populacao"`
+	AgeGroup          string  `json:"faixa"`
+	Population        int64   `json:"populacao"`
+	AverageCityIncome float64 `json:"renda_media_cidades"`
 }
 
 type AgeDistributionResponse struct {
@@ -50,8 +51,9 @@ func NewAgeDistributionResponse(
 
 	for _, group := range distribution.Groups {
 		groups = append(groups, AgeGroupResponse{
-			AgeGroup:   group.AgeGroup,
-			Population: group.Population,
+			AgeGroup:          group.AgeGroup,
+			Population:        group.Population,
+			AverageCityIncome: group.AverageCityIncome,
 		})
 	}
 

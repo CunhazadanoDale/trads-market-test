@@ -28,6 +28,7 @@ type AgeDistribution struct {
 }
 
 type AgeGroupMetrics struct {
-	AgeGroup   string
-	Population int64
+	AgeGroup          string
+	Population        int64
+	AverageCityIncome float64
 }
