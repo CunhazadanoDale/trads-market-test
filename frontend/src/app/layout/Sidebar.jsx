@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Map as MapIcon,
   MapPin,
+  Users,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -18,6 +19,12 @@ export function Sidebar() {
       title: 'Geral',
       items: [
         { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/' },
+      ],
+    },
+    {
+      title: 'Inteligência de Mercado',
+      items: [
+        { label: 'Público', icon: <Users size={18} />, path: '/publico' },
       ],
     },
     {

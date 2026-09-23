@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BarChart2, Map as MapIcon, MapPin, PieChart, RefreshCw, Users, Wallet } from 'lucide-react';
+import { Activity, BarChart2, Map as MapIcon, MapPin, RefreshCw, Users, Wallet } from 'lucide-react';
 import './Dashboard.css';
 import { DataGrid } from '../../app/components/DataGrid';
 import { Panel } from '../../app/components/Panel';
@@ -9,9 +9,9 @@ import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
 import { getCities } from '../../services/cities';
 import { getHealth } from '../../services/health';
-import { getAgeDistribution, getNationalMetrics, getStateMetrics, getTopCities } from '../../services/dashboard';
+import { getNationalMetrics, getStateMetrics, getTopCities } from '../../services/dashboard';
 import { API_BASE_URL } from '../../services/api';
-import { formatGDP, formatIncome, formatInteger, formatPercent, formatPopulation } from '../../utils/format';
+import { formatGDP, formatIncome, formatInteger, formatPopulation } from '../../utils/format';
 
 const CITIES_PANEL_SIZE = 8;
 
@@ -44,8 +44,6 @@ export default function Dashboard() {
   const healthRes = useApiResource(getHealth, []);
   // Estado escolhido; quando vazio, vale o primeiro da lista (derivado)
   const [rawIbge, setRawIbge] = useState('');
-  const [ageRegion, setAgeRegion] = useState('');
-  const [ageIbge, setAgeIbge] = useState('');
   const [metricsRegion, setMetricsRegion] = useState('');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
@@ -62,10 +60,6 @@ export default function Dashboard() {
     [metricsRegion],
   );
   const topCitiesRes = useApiResource(getTopCities, []);
-  const ageRes = useApiResource(
-    ({ signal }) => getAgeDistribution({ regiao: ageRegion, ibge: ageIbge, signal }),
-    [ageRegion, ageIbge],
-  );
 
   const selectedState = useMemo(
     () => states.find((state) => String(state.ibge_code) === selectedIbge) ?? null,
@@ -119,25 +113,6 @@ export default function Dashboard() {
     () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
     [states],
   );
-
-  const ageStates = useMemo(
-    () => states.filter((state) => !ageRegion || state.region === ageRegion),
-    [states, ageRegion],
-  );
-
-  const selectedAgeState = useMemo(
-    () => states.find((state) => String(state.ibge_code) === ageIbge) ?? null,
-    [states, ageIbge],
-  );
-
-  const handleAgeRegionChange = (region) => {
-    setAgeRegion(region);
-    setAgeIbge((current) => {
-      if (!current) return current;
-      const state = states.find((item) => String(item.ibge_code) === current);
-      return state && (!region || state.region === region) ? current : '';
-    });
-  };
 
   const health = healthRes.data;
   const apiUp = Boolean(health?.app?.ok);
@@ -257,18 +232,6 @@ export default function Dashboard() {
     },
   ];
 
-  const age = ageRes.data;
-  const ageGroups = useMemo(() => age?.grupos ?? [], [age]);
-  const maxAgePopulation =
-    ageGroups.length > 0 ? Math.max(...ageGroups.map((group) => group.populacao)) : 1;
-
-  const ageScope = [
-    ageRegion ? `Região ${ageRegion}` : '',
-    selectedAgeState ? `UF ${selectedAgeState.uf}` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
   const handleRefresh = () => {
     statesRes.reload();
     healthRes.reload();
@@ -276,7 +239,6 @@ export default function Dashboard() {
     nationalRes.reload();
     stateMetricsRes.reload();
     topCitiesRes.reload();
-    ageRes.reload();
   };
 
   return (
@@ -477,81 +439,6 @@ export default function Dashboard() {
           </Panel>
         ))}
       </div>
-
-      <Panel title="Distribuição por faixa etária" icon={<PieChart size={16} />}>
-        <div className="panel-controls">
-          <div className="toolbar-field">
-            <label className="toolbar-label" htmlFor="age-region-filter">Região</label>
-            <select
-              id="age-region-filter"
-              className="filter-select"
-              value={ageRegion}
-              onChange={(event) => handleAgeRegionChange(event.target.value)}
-            >
-              <option value="">Todas</option>
-              {regionOptions.map((region) => (
-                <option key={region} value={region}>{region}</option>
-              ))}
-            </select>
-          </div>
-          <div className="toolbar-field">
-            <label className="toolbar-label" htmlFor="age-uf-filter">UF</label>
-            <select
-              id="age-uf-filter"
-              className="filter-select"
-              value={ageIbge}
-              onChange={(event) => setAgeIbge(event.target.value)}
-            >
-              <option value="">Todas</option>
-              {ageStates.map((state) => (
-                <option key={state.ibge_code} value={String(state.ibge_code)}>
-                  {`${state.uf} — ${state.name}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {ageRes.loading && !age ? (
-          <div className="loading-box">Carregando faixa etária…</div>
-        ) : ageRes.error ? (
-          <div className="error-box">
-            {ageRes.error.message}
-            <button type="button" className="error-retry" onClick={ageRes.reload}>
-              Tentar novamente
-            </button>
-          </div>
-        ) : ageGroups.length === 0 ? (
-          <div className="loading-box">Sem dado de faixa etária.</div>
-        ) : (
-          <>
-            <ul className="age-list">
-              {ageGroups.map((group) => (
-                <li key={group.faixa} className="age-item">
-                  <span className="age-name" title={group.faixa}>{group.faixa}</span>
-                  <span className="age-bar">
-                    <span
-                      className="age-bar-fill"
-                      style={{ width: `${(group.populacao / maxAgePopulation) * 100}%` }}
-                    />
-                  </span>
-                  <span className="age-count">
-                    {formatInteger(group.populacao)} · {formatPercent((group.populacao / age.total) * 100)}
-                  </span>
-                  <span className="age-income">
-                    {formatIncome({ value: group.renda_media_cidades })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="panel-hint">
-              Renda média das cidades: renda das cidades onde vivem as pessoas de cada faixa, ponderada pela população da faixa.
-            </p>
-            <p className="panel-hint">
-              Total {formatInteger(age.total)} pessoas · {ageScope || 'todo o país'} · Censo {age.ano} · IBGE/SIDRA 9514
-            </p>
-          </>
-        )}
-      </Panel>
 
       <Panel title="UFs por indicador" icon={<MapIcon size={16} />}>
         <div className="panel-controls">
