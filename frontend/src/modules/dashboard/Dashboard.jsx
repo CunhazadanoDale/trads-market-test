@@ -44,6 +44,8 @@ export default function Dashboard() {
   const healthRes = useApiResource(getHealth, []);
   // Estado escolhido; quando vazio, vale o primeiro da lista (derivado)
   const [rawIbge, setRawIbge] = useState('');
+  const [ageRegion, setAgeRegion] = useState('');
+  const [ageIbge, setAgeIbge] = useState('');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
   const selectedIbge = rawIbge || (states.length > 0 ? String(states[0].ibge_code) : '');
@@ -56,7 +58,10 @@ export default function Dashboard() {
   const nationalRes = useApiResource(getNationalMetrics, []);
   const stateMetricsRes = useApiResource(getStateMetrics, []);
   const topCitiesRes = useApiResource(getTopCities, []);
-  const ageRes = useApiResource(getAgeDistribution, []);
+  const ageRes = useApiResource(
+    ({ signal }) => getAgeDistribution({ regiao: ageRegion, ibge: ageIbge, signal }),
+    [ageRegion, ageIbge],
+  );
 
   const selectedState = useMemo(
     () => states.find((state) => String(state.ibge_code) === selectedIbge) ?? null,
@@ -75,6 +80,30 @@ export default function Dashboard() {
   }, [states]);
 
   const maxRegionCount = regions.length > 0 ? regions[0].count : 1;
+
+  const ageRegions = useMemo(
+    () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
+    [states],
+  );
+
+  const ageStates = useMemo(
+    () => states.filter((state) => !ageRegion || state.region === ageRegion),
+    [states, ageRegion],
+  );
+
+  const selectedAgeState = useMemo(
+    () => states.find((state) => String(state.ibge_code) === ageIbge) ?? null,
+    [states, ageIbge],
+  );
+
+  const handleAgeRegionChange = (region) => {
+    setAgeRegion(region);
+    setAgeIbge((current) => {
+      if (!current) return current;
+      const state = states.find((item) => String(item.ibge_code) === current);
+      return state && (!region || state.region === region) ? current : '';
+    });
+  };
 
   const health = healthRes.data;
   const apiUp = Boolean(health?.app?.ok);
@@ -198,6 +227,13 @@ export default function Dashboard() {
   const ageGroups = useMemo(() => age?.grupos ?? [], [age]);
   const maxAgePopulation =
     ageGroups.length > 0 ? Math.max(...ageGroups.map((group) => group.populacao)) : 1;
+
+  const ageScope = [
+    ageRegion ? `Região ${ageRegion}` : '',
+    selectedAgeState ? `UF ${selectedAgeState.uf}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const handleRefresh = () => {
     statesRes.reload();
@@ -394,6 +430,38 @@ export default function Dashboard() {
       </div>
 
       <Panel title="Distribuição por faixa etária" icon={<PieChart size={16} />}>
+        <div className="age-controls">
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="age-region-filter">Região</label>
+            <select
+              id="age-region-filter"
+              className="filter-select"
+              value={ageRegion}
+              onChange={(event) => handleAgeRegionChange(event.target.value)}
+            >
+              <option value="">Todas</option>
+              {ageRegions.map((region) => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
+          </div>
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="age-uf-filter">UF</label>
+            <select
+              id="age-uf-filter"
+              className="filter-select"
+              value={ageIbge}
+              onChange={(event) => setAgeIbge(event.target.value)}
+            >
+              <option value="">Todas</option>
+              {ageStates.map((state) => (
+                <option key={state.ibge_code} value={String(state.ibge_code)}>
+                  {`${state.uf} — ${state.name}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         {ageRes.loading && !age ? (
           <div className="loading-box">Carregando faixa etária…</div>
         ) : ageRes.error ? (
@@ -424,7 +492,7 @@ export default function Dashboard() {
               ))}
             </ul>
             <p className="panel-hint">
-              Total {formatInteger(age.total)} pessoas · Censo {age.ano} · IBGE/SIDRA 9514
+              Total {formatInteger(age.total)} pessoas · {ageScope || 'todo o país'} · Censo {age.ano} · IBGE/SIDRA 9514
             </p>
           </>
         )}

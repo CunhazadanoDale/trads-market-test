@@ -81,6 +81,25 @@
   animation: dashboard-spin 1s linear infinite;
 }
 
+/* Recorte de faixa etária */
+.age-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.age-controls .toolbar-field {
+  flex: 1;
+  min-width: 240px;
+}
+
+.age-controls .toolbar-field .filter-select {
+  width: auto;
+  flex: 1;
+  min-width: 180px;
+}
+
 @keyframes dashboard-spin {
   to {
     transform: rotate(360deg);

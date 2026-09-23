@@ -12,6 +12,13 @@ export function getTopCities({ signal } = {}) {
   return api.get('/api/v1/dashboard/top-cities', { signal });
 }
 
-export function getAgeDistribution({ signal } = {}) {
-  return api.get('/api/v1/dashboard/age', { signal });
+export function getAgeDistribution({ regiao = '', ibge = '', signal } = {}) {
+  const params = new URLSearchParams();
+
+  if (regiao) params.set('regiao', regiao);
+  if (ibge) params.set('ibge', ibge);
+
+  const query = params.toString();
+
+  return api.get(`/api/v1/dashboard/age${query ? `?${query}` : ''}`, { signal });
 }
