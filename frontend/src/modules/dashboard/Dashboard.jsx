@@ -537,9 +537,15 @@ export default function Dashboard() {
                   <span className="age-count">
                     {formatInteger(group.populacao)} · {formatPercent((group.populacao / age.total) * 100)}
                   </span>
+                  <span className="age-income">
+                    {formatIncome({ value: group.renda_media_cidades })}
+                  </span>
                 </li>
               ))}
             </ul>
+            <p className="panel-hint">
+              Renda média das cidades: renda das cidades onde vivem as pessoas de cada faixa, ponderada pela população da faixa.
+            </p>
             <p className="panel-hint">
               Total {formatInteger(age.total)} pessoas · {ageScope || 'todo o país'} · Censo {age.ano} · IBGE/SIDRA 9514
             </p>
