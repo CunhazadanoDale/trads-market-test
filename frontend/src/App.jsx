@@ -3,6 +3,7 @@ import { AppShell } from './app/layout/AppShell';
 
 import Dashboard from './modules/dashboard/Dashboard';
 import Mercados from './modules/mercados/Mercados';
+import Metodologia from './modules/metodologia/Metodologia';
 import Publico from './modules/publico/Publico';
 import States from './modules/states/States';
 import Cities from './modules/cities/Cities';
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/mercados" element={<Mercados />} />
         <Route path="/publico" element={<Publico />} />
+        <Route path="/metodologia" element={<Metodologia />} />
         <Route path="/estados" element={<States />} />
         <Route path="/cidades" element={<Cities />} />
         <Route path="/cidades/:ibgeCode" element={<CityDetail />} />

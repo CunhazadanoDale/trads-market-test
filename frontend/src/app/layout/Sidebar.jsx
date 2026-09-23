@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  BookOpen,
   Globe,
   LayoutDashboard,
   Map as MapIcon,
@@ -20,6 +21,7 @@ export function Sidebar() {
       title: 'Geral',
       items: [
         { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/' },
+        { label: 'Metodologia', icon: <BookOpen size={18} />, path: '/metodologia' },
       ],
     },
     {

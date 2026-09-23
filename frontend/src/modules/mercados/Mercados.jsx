@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BarChart2, Globe, Info, Map as MapIcon } from 'lucide-react';
 import './Mercados.css';
 import { DataGrid } from '../../app/components/DataGrid';
@@ -185,7 +186,11 @@ export default function Mercados() {
         )}
       </Panel>
 
-      <Panel title="Como ler estes números" icon={<Info size={16} />}>
+      <Panel
+        title="Como ler estes números"
+        icon={<Info size={16} />}
+        actions={<Link className="panel-link" to="/metodologia">Ver metodologia</Link>}
+      >
         <dl className="mercados-guide">
           <div className="mercados-guide-item">
             <dt>População · Municípios · PIB</dt>

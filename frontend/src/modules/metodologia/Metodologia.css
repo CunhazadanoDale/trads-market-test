@@ -1,0 +1,102 @@
+.metodologia-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.metodologia-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.metodologia-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.metodologia-subtitle {
+  max-width: 90ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.metodologia-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.metodologia-guide-item dt {
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.metodologia-guide-item dd {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.met-formula {
+  display: block;
+  margin-top: var(--space-1);
+  padding: 2px var(--space-2);
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.met-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.met-table th {
+  padding: var(--space-2);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.met-table td {
+  padding: var(--space-2);
+  vertical-align: top;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.met-table tr:last-child td {
+  border-bottom: none;
+}
+
+.met-table-indicator {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.met-table-year {
+  white-space: nowrap;
+}
+
+.metodologia-note {
+  margin: 0;
+  max-width: 90ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}

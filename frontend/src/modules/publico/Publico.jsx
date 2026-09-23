@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Info, PieChart, Users } from 'lucide-react';
 import './Publico.css';
 import { Panel } from '../../app/components/Panel';
@@ -144,7 +145,11 @@ export default function Publico() {
         )}
       </Panel>
 
-      <Panel title="Como ler estes números" icon={<Info size={16} />}>
+      <Panel
+        title="Como ler estes números"
+        icon={<Info size={16} />}
+        actions={<Link className="panel-link" to="/metodologia">Ver metodologia</Link>}
+      >
         <dl className="publico-guide">
           <div className="publico-guide-item">
             <dt>População · %</dt>
