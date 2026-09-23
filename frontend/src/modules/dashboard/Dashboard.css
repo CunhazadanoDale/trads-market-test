@@ -58,6 +58,66 @@
   margin-top: var(--space-1);
 }
 
+.synthesis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.synthesis-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.synthesis-card:hover {
+  background-color: var(--bg-panel-hover);
+  border-color: var(--border-color-hover);
+}
+
+.synthesis-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--neutral-bg);
+  color: var(--primary);
+}
+
+.synthesis-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.synthesis-card-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.synthesis-card-desc {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.synthesis-card-arrow {
+  margin-left: auto;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 /* Toolbar */
 .toolbar-field {
   display: flex;

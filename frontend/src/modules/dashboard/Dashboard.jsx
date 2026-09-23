@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BarChart2, Map as MapIcon, MapPin, RefreshCw, Users, Wallet } from 'lucide-react';
+import { Activity, BarChart2, ChevronRight, Globe, Map as MapIcon, MapPin, RefreshCw, Users, Wallet } from 'lucide-react';
 import './Dashboard.css';
 import { Panel } from '../../app/components/Panel';
 import { StatusBadge } from '../../app/components/StatusBadge';
@@ -189,8 +189,31 @@ export default function Dashboard() {
         </div>
       )}
 
+      <div className="synthesis-grid">
+        <Link to="/mercados" className="synthesis-card">
+          <span className="synthesis-card-icon"><Globe size={20} /></span>
+          <span className="synthesis-card-body">
+            <span className="synthesis-card-title">Onde vender?</span>
+            <span className="synthesis-card-desc">
+              Mercados por região e indicadores por UF: população, PIB e renda de cada mercado.
+            </span>
+          </span>
+          <ChevronRight size={18} className="synthesis-card-arrow" />
+        </Link>
+        <Link to="/publico" className="synthesis-card">
+          <span className="synthesis-card-icon"><Users size={20} /></span>
+          <span className="synthesis-card-body">
+            <span className="synthesis-card-title">Para quem vender?</span>
+            <span className="synthesis-card-desc">
+              Faixa etária por região e UF, com a renda das cidades onde cada público mora.
+            </span>
+          </span>
+          <ChevronRight size={18} className="synthesis-card-arrow" />
+        </Link>
+      </div>
+
       <div className="summary-cards">
-        {[...summaryCards, ...nationalCards].map((card) => (
+        {[...nationalCards, ...summaryCards].map((card) => (
           <div key={card.title} className="summary-card">
             <span className="summary-card-title">{card.title}</span>
             <span className="summary-card-value">{card.value}</span>
@@ -200,28 +223,34 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
-        <Panel
-          title="Status dos Serviços"
-          icon={<Activity size={16} />}
-          actions={(
-            <button
-              type="button"
-              className="topbar-action-btn"
-              onClick={healthRes.reload}
-              title="Verificar novamente"
-            >
-              <RefreshCw size={14} />
-            </button>
-          )}
-        >
-          <ul className="service-list">
-            <ServiceRow label="API" path="/health" probe={health?.app} />
-            <ServiceRow label="Banco" path="/health/db" probe={health?.database} />
-          </ul>
-          <p className="panel-hint">
-            Base: <code>{API_BASE_URL || window.location.origin}</code> · verificação automática a cada 30s no topo da tela.
-          </p>
-        </Panel>
+        {rankings.map((ranking) => (
+          <Panel key={ranking.title} title={ranking.title} icon={ranking.icon}>
+            {topCitiesRes.loading && !topCitiesRes.data ? (
+              <div className="loading-box">Carregando ranking…</div>
+            ) : topCitiesRes.error ? (
+              <div className="error-box">
+                {topCitiesRes.error.message}
+                <button type="button" className="error-retry" onClick={topCitiesRes.reload}>
+                  Tentar novamente
+                </button>
+              </div>
+            ) : (
+              <ul className="city-list">
+                {(ranking.cities ?? []).map((city, index) => (
+                  <li key={city.ibge_code} className="city-item">
+                    <span className="city-ibge">#{index + 1}</span>
+                    <Link to={`/cidades/${city.ibge_code}`}>
+                      {city.name} ({city.state.uf})
+                    </Link>
+                    <span className="service-meta" style={{ marginLeft: 'auto' }}>
+                      {ranking.format(ranking.pick(city))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        ))}
 
         <Panel
           title={selectedState ? `Cidades — ${selectedState.uf}` : 'Cidades'}
@@ -283,34 +312,28 @@ export default function Dashboard() {
           )}
         </Panel>
 
-        {rankings.map((ranking) => (
-          <Panel key={ranking.title} title={ranking.title} icon={ranking.icon}>
-            {topCitiesRes.loading && !topCitiesRes.data ? (
-              <div className="loading-box">Carregando ranking…</div>
-            ) : topCitiesRes.error ? (
-              <div className="error-box">
-                {topCitiesRes.error.message}
-                <button type="button" className="error-retry" onClick={topCitiesRes.reload}>
-                  Tentar novamente
-                </button>
-              </div>
-            ) : (
-              <ul className="city-list">
-                {(ranking.cities ?? []).map((city, index) => (
-                  <li key={city.ibge_code} className="city-item">
-                    <span className="city-ibge">#{index + 1}</span>
-                    <Link to={`/cidades/${city.ibge_code}`}>
-                      {city.name} ({city.state.uf})
-                    </Link>
-                    <span className="service-meta" style={{ marginLeft: 'auto' }}>
-                      {ranking.format(ranking.pick(city))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-        ))}
+        <Panel
+          title="Status dos Serviços"
+          icon={<Activity size={16} />}
+          actions={(
+            <button
+              type="button"
+              className="topbar-action-btn"
+              onClick={healthRes.reload}
+              title="Verificar novamente"
+            >
+              <RefreshCw size={14} />
+            </button>
+          )}
+        >
+          <ul className="service-list">
+            <ServiceRow label="API" path="/health" probe={health?.app} />
+            <ServiceRow label="Banco" path="/health/db" probe={health?.database} />
+          </ul>
+          <p className="panel-hint">
+            Base: <code>{API_BASE_URL || window.location.origin}</code> · verificação automática a cada 30s no topo da tela.
+          </p>
+        </Panel>
       </div>
 
     </div>
