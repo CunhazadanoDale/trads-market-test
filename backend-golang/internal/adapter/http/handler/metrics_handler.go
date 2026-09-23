@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
+	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/in"
 )
 
@@ -42,8 +45,40 @@ func (h *MetricsHandler) FindAgeDistribution(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	distribution, err := h.useCase.FindAgeDistribution(r.Context())
+	regiao, ok := parseRegion(w, r)
+	if !ok {
+		return
+	}
+
+	var ibgeCode int64
+
+	if raw := r.URL.Query().Get("ibge"); raw != "" {
+		value, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || value <= 0 {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"ibge deve ser um código IBGE de estado válido",
+			)
+			return
+		}
+
+		ibgeCode = value
+	}
+
+	distribution, err := h.useCase.FindAgeDistribution(r.Context(), regiao, ibgeCode)
 	if err != nil {
+		if errors.Is(err, domain.ErrStateNotFound) {
+			writeError(
+				w,
+				http.StatusNotFound,
+				CodeStateNotFound,
+				fmt.Sprintf("estado com código IBGE %d não encontrado", ibgeCode),
+			)
+			return
+		}
+
 		writeError(
 			w,
 			http.StatusInternalServerError,

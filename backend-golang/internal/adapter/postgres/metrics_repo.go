@@ -63,20 +63,28 @@ func (m *MetricsRepo) FindNational(
 
 func (m *MetricsRepo) FindAgeDistribution(
 	ctx context.Context,
+	regiao string,
+	ibgeCode int64,
 ) (domain.AgeDistribution, error) {
+	// Os JOINs permitem recortar por região/UF; a janela OVER () calcula o
+	// total do recorte (só o GROUP BY que sobreviveu ao WHERE).
 	const query = `
 		SELECT
-			year,
-			age_group,
-			SUM(population) AS population,
-			SUM(SUM(population)) OVER () AS total
-		FROM age_indicators
-		WHERE year = (SELECT MAX(year) FROM age_indicators)
-		GROUP BY year, age_group
-		ORDER BY CAST(SPLIT_PART(age_group, ' ', 1) AS int)
+			a.year,
+			a.age_group,
+			SUM(a.population) AS population,
+			SUM(SUM(a.population)) OVER () AS total
+		FROM age_indicators a
+		INNER JOIN cities c ON c.id = a.city_id
+		INNER JOIN states s ON s.id = c.state_id
+		WHERE a.year = (SELECT MAX(year) FROM age_indicators)
+			AND ($1 = '' OR s.region = $1)
+			AND ($2 = 0 OR s.ibge_code = $2)
+		GROUP BY a.year, a.age_group
+		ORDER BY CAST(SPLIT_PART(a.age_group, ' ', 1) AS int)
 	`
 
-	rows, err := m.db.Query(ctx, query)
+	rows, err := m.db.Query(ctx, query, regiao, ibgeCode)
 	if err != nil {
 		return domain.AgeDistribution{}, fmt.Errorf(
 			"query age distribution: %w",
@@ -115,6 +123,11 @@ func (m *MetricsRepo) FindAgeDistribution(
 	}
 
 	if len(distribution.Groups) == 0 {
+		// Recorte por UF sem dados: o estado não existe (ou não tem idade).
+		// Região sempre existe (validada no handler) — vazio ali é erro de dados.
+		if ibgeCode != 0 {
+			return domain.AgeDistribution{}, domain.ErrStateNotFound
+		}
 		return domain.AgeDistribution{}, fmt.Errorf(
 			"age distribution is empty",
 		)

@@ -42,6 +42,8 @@ func (m *MetricsUseCaseImpl) FindTopCities(
 
 func (m *MetricsUseCaseImpl) FindAgeDistribution(
 	ctx context.Context,
+	regiao string,
+	ibgeCode int64,
 ) (domain.AgeDistribution, error) {
-	return m.repo.FindAgeDistribution(ctx)
+	return m.repo.FindAgeDistribution(ctx, regiao, ibgeCode)
 }
