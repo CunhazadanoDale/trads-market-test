@@ -55,6 +55,24 @@ services:
       - DATABASE_URL=postgres://trads:trads@postgres:5432/trads?sslmode=disable
       - BASE_URL_IBGE=https://servicodados.ibge.gov.br/api/v3
       - BASE_URL_LOCALIDADES=https://servicodados.ibge.gov.br/api/v1
+      - BASE_URL_ANS=${BASE_URL_ANS:-https://dadosabertos.ans.gov.br/FTP/PDA/taxa_de_cobertura_de_planos_de_saude-047/pda-047-taxa_cobertura.csv}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - trads-network
+
+  import_ans:
+    build: ./backend-golang
+    image: trads-backend
+    container_name: trads-import-ans
+    restart: "no"
+    command: ["import", "ans"]
+    profiles: ["ans"]
+    environment:
+      - APP_ENV=production
+      - DATABASE_URL=postgres://trads:trads@postgres:5432/trads?sslmode=disable
+      - BASE_URL_ANS=${BASE_URL_ANS:-https://dadosabertos.ans.gov.br/FTP/PDA/taxa_de_cobertura_de_planos_de_saude-047/pda-047-taxa_cobertura.csv}
     depends_on:
       migrate:
         condition: service_completed_successfully

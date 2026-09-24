@@ -3,20 +3,32 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ans"
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/postgres"
 	"github.com/CunhazadanoDale/trads-market-test/internal/config"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/usecases"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
+	target := "ibge"
+	if len(os.Args) > 1 {
+		target = strings.ToLower(os.Args[1])
+	}
+	if target != "ibge" && target != "ans" && target != "all" {
+		log.Fatalf("alvo inválido: %q (use ibge, ans ou all)", os.Args[1])
+	}
+
 	cfg := config.LoadConfig()
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		12*time.Minute,
+		30*time.Minute,
 	)
 	defer cancel()
 
@@ -26,6 +38,16 @@ func main() {
 	}
 	defer db.Close()
 
+	if target == "ibge" || target == "all" {
+		importIBGE(ctx, db, cfg)
+	}
+
+	if target == "ans" || target == "all" {
+		importANS(ctx, db, cfg)
+	}
+}
+
+func importIBGE(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
 	ibgeClient := ibge.NewIbgeClient(cfg.BaseUrlIBGE, cfg.BaseUrlLocalidades, nil)
 
 	importStart := time.Now()
@@ -94,4 +116,17 @@ func main() {
 	log.Printf("etapa faixa etária: %s", time.Since(stageStart))
 
 	log.Printf("IBGE import successfully em %s", time.Since(importStart))
+}
+
+func importANS(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
+	ansClient := ans.NewClient(cfg.BaseUrlANS)
+	ansRepository := postgres.NewANSRepo(db)
+	ansUsecase := usecases.NewANSUsecase(ansClient, ansRepository)
+
+	importStart := time.Now()
+	if err := ansUsecase.Import(ctx); err != nil {
+		log.Fatalf("falha ao importar ANS: %v", err)
+	}
+
+	log.Printf("ANS import successfully em %s", time.Since(importStart))
 }
