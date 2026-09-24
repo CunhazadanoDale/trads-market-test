@@ -49,8 +49,16 @@ jobs:
         with:
           go-version-file: backend-golang/go.mod
       - name: database migrate
+        working-directory: backend-golang
         run: |
-          for file in db/migrations/*.up.sql; do
+          shopt -s nullglob
+          files=(db/migrations/*.up.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No migrations found" >&2
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            echo "Applying $file"
             psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$file"
           done
       - name: go test integration
