@@ -5,10 +5,13 @@ import (
 	"fmt"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var _ out.AgeRepository = (*AgeRepo)(nil)
+
+const ageUpsertChunk = 1000
 
 type AgeRepo struct {
 	db *pgxpool.Pool
@@ -20,14 +23,11 @@ func NewAgeRepo(db *pgxpool.Pool) *AgeRepo {
 	}
 }
 
-func (a *AgeRepo) Upsert(
+func (a *AgeRepo) UpsertMany(
 	ctx context.Context,
-	ibgeCode int64,
-	year int,
-	ageGroup string,
-	population int64,
+	rows []out.AgeUpsert,
 ) error {
-	query := `INSERT INTO age_indicators (
+	const query = `INSERT INTO age_indicators (
 			city_id,
 			year,
 			age_group,
@@ -46,28 +46,59 @@ func (a *AgeRepo) Upsert(
 			updated_at = NOW()
 	`
 
-	result, err := a.db.Exec(
-		ctx,
-		query,
-		ibgeCode,
-		year,
-		ageGroup,
-		population,
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"upsert age %q for IBGE code %d: %w",
-			ageGroup,
-			ibgeCode,
-			err,
-		)
+	for start := 0; start < len(rows); start += ageUpsertChunk {
+		end := min(start+ageUpsertChunk, len(rows))
+
+		if err := a.upsertChunk(ctx, query, rows[start:end]); err != nil {
+			return err
+		}
 	}
 
-	if result.RowsAffected() == 0 {
-		return fmt.Errorf(
-			"city not found for IBGE code %d",
-			ibgeCode,
-		)
+	return nil
+}
+
+func (a *AgeRepo) upsertChunk(
+	ctx context.Context,
+	query string,
+	chunk []out.AgeUpsert,
+) error {
+	tx, err := a.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx de age_indicators: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	batch := &pgx.Batch{}
+	for _, row := range chunk {
+		batch.Queue(query, row.IBGECode, row.Year, row.AgeGroup, row.Population)
+	}
+
+	results := tx.SendBatch(ctx, batch)
+	defer results.Close()
+
+	for i := range chunk {
+		tag, err := results.Exec()
+		if err != nil {
+			return fmt.Errorf(
+				"upsert age %q for IBGE code %d: %w",
+				chunk[i].AgeGroup, chunk[i].IBGECode, err,
+			)
+		}
+
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf(
+				"city not found for IBGE code %d",
+				chunk[i].IBGECode,
+			)
+		}
+	}
+
+	if err := results.Close(); err != nil {
+		return fmt.Errorf("fechar batch de age_indicators: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit de age_indicators: %w", err)
 	}
 
 	return nil

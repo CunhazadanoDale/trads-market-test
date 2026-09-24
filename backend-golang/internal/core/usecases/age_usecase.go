@@ -38,6 +38,8 @@ func (a *AgeUsecaseImpl) Import(ctx context.Context) error {
 		)
 	}
 
+	rows := make([]out.AgeUpsert, 0, len(entries))
+
 	for _, entry := range entries {
 		ibgeCode, err := strconv.ParseInt(
 			entry.Localidade.ID,
@@ -62,20 +64,16 @@ func (a *AgeUsecaseImpl) Import(ctx context.Context) error {
 			)
 		}
 
-		if err := a.repo.Upsert(
-			ctx,
-			ibgeCode,
-			AgeYear,
-			entry.AgeGroup,
-			population,
-		); err != nil {
-			return fmt.Errorf(
-				"persist age %q for locality %q: %w",
-				entry.AgeGroup,
-				entry.Localidade.Nome,
-				err,
-			)
-		}
+		rows = append(rows, out.AgeUpsert{
+			IBGECode:   ibgeCode,
+			Year:       AgeYear,
+			AgeGroup:   entry.AgeGroup,
+			Population: population,
+		})
+	}
+
+	if err := a.repo.UpsertMany(ctx, rows); err != nil {
+		return fmt.Errorf("persist age rows: %w", err)
 	}
 
 	return nil
