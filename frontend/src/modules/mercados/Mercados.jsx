@@ -274,7 +274,12 @@ export default function Mercados() {
               Top 10 de {formatInteger(ansMetrics?.municipios?.length ?? 0)} municípios
               {' · '}{ansRegion ? `Região ${ansRegion}` : 'todo o país'}
               {' · '}ordenado por {ANS_SORT_FIELDS.find((option) => option.value === ansSort)?.label.toLowerCase()}
-              {' · '}fonte {ansMetrics?.fonte ?? 'ANS PDA-047 Taxa de Cobertura'} · população: Censo 2022.
+              {ansMetrics?.fonte ? (
+                <>
+                  {' · '}fonte {ansMetrics.fonte}
+                </>
+              ) : null}
+              {' · '}população: Censo 2022.
             </p>
           </>
         )}
