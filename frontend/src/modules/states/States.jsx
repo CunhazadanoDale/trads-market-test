@@ -12,7 +12,6 @@ const EMPTY_FILTERS = { search: '', region: ALL_REGIONS };
 export default function States() {
   const { data: states, loading, error, reload } = useApiResource(getStates, []);
 
-  // Rascunho editado nos filtros + filtros efetivamente aplicados
   const [draft, setDraft] = useState(EMPTY_FILTERS);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 

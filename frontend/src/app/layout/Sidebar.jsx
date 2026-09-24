@@ -15,7 +15,6 @@ import './Sidebar.css';
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Menu espelhando os recursos disponíveis no backend-golang
   const navGroups = [
     {
       title: 'Geral',

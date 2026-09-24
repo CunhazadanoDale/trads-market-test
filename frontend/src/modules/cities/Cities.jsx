@@ -30,8 +30,6 @@ export default function Cities() {
   const statesRes = useApiResource(getStates, []);
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
 
-  // Pode chegar pré-selecionado do Dashboard ("Ver todas");
-  // sem escolha explícita, vale o primeiro estado da lista (derivado)
   const [rawSelected, setRawSelected] = useState(() => String(location.state?.ibge ?? ''));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

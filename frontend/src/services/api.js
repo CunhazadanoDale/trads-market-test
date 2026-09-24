@@ -1,13 +1,3 @@
-/**
- * Cliente HTTP central da API (backend-golang).
- *
- * Padrões do backend que este cliente respeita:
- * - Base URL via VITE_API_BASE_URL; vazio = mesma origem (usa o proxy do Vite em dev, evita CORS).
- * - Sucesso em JSON com campos em snake_case (ibge_code, etc.).
- * - Paginação no envelope { dados, pagina, tamanho, total }.
- * - Erros em JSON {"error":{"code","message"}}; exceção: 405 em texto puro.
- */
-
 const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');

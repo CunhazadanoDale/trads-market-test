@@ -41,7 +41,6 @@ function ServiceRow({ label, path, probe }) {
 export default function Dashboard() {
   const statesRes = useApiResource(getStates, []);
   const healthRes = useApiResource(getHealth, []);
-  // Estado escolhido; quando vazio, vale o primeiro da lista (derivado)
   const [rawIbge, setRawIbge] = useState('');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
