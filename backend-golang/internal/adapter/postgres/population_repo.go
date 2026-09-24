@@ -35,7 +35,7 @@ func (p *PopulationRepo) Upsert(ctx context.Context, ibgeCode int64, year int, v
 			$4
 		FROM cities
 		WHERE ibge_code = $1
-		ON CONFLICT (city_id, year, source)
+		ON CONFLICT (city_id, year)
 		DO UPDATE SET
 			value = EXCLUDED.value,
 			updated_at = NOW()`

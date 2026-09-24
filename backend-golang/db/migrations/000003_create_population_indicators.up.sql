@@ -12,9 +12,6 @@ CREATE TABLE IF NOT EXISTS population_indicators (
         REFERENCES cities(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_population_city_year_source
-        UNIQUE (city_id, year, source),
-
     CONSTRAINT uq_population_city_year
         UNIQUE (city_id, year),
 
