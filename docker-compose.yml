@@ -67,9 +67,8 @@ services:
     build: ./backend-golang
     image: trads-backend
     container_name: trads-import-ans
-    restart: "no"
+    restart: "on-failure:3"
     command: ["import", "ans"]
-    profiles: ["ans"]
     environment:
       - APP_ENV=production
       - DATABASE_URL=postgres://trads:trads@postgres:5432/trads?sslmode=disable
@@ -77,6 +76,8 @@ services:
       - ANS_FONTE=ANS PDA-047 Taxa de Cobertura
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      import:
         condition: service_completed_successfully
     networks:
       - trads-network

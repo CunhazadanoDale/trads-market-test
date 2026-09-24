@@ -33,7 +33,7 @@ import:
 	docker compose run --rm import
 
 import-ans:
-	docker compose --profile ans run --rm import_ans
+	docker compose run --rm import_ans
 
 test:
 	cd backend-golang && go vet ./... && go test ./...

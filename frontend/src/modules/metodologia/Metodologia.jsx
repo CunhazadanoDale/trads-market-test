@@ -161,8 +161,9 @@ export default function Metodologia() {
             <dt>Caminho do dado</dt>
             <dd>
               API do IBGE → importação (serviço import do docker compose) e dados
-              abertos da ANS → importação (serviço import_ans, perfil ans) →
-              PostgreSQL → API Go → esta interface (React + Vite).
+              abertos da ANS → importação (serviço import_ans, roda junto no
+              docker compose up) → PostgreSQL → API Go → esta interface
+              (React + Vite).
             </dd>
           </div>
           <div className="metodologia-guide-item">
