@@ -1,21 +1,21 @@
 package dtos
 
 type StateRecord struct {
-	ID        int64  `json:"id"`
-	Sigla     string `json:"sigla"`
-	Nome      string `json:"nome"`
-	Regiao    RegionRecord `json:"regiao"`
+	ID     int64        `json:"id"`
+	Sigla  string       `json:"sigla"`
+	Nome   string       `json:"nome"`
+	Regiao RegionRecord `json:"regiao"`
 }
 
 type RegionRecord struct {
-	ID   int64  `json:"id"`
+	ID    int64  `json:"id"`
 	Sigla string `json:"sigla"`
-	Nome string `json:"nome"`
+	Nome  string `json:"nome"`
 }
 
 type CityRecord struct {
-	ID     int64  `json:"id"`
-	Nome   string `json:"nome"`
+	ID           int64             `json:"id"`
+	Nome         string            `json:"nome"`
 	Microrregiao MicroregionRecord `json:"microrregiao"`
 }
 
@@ -28,8 +28,8 @@ type MesoregionRecord struct {
 }
 
 type UFRecord struct {
-	ID     int64  `json:"id"`
-	Sigla  string `json:"sigla"`
-	Nome   string `json:"nome"`
+	ID     int64        `json:"id"`
+	Sigla  string       `json:"sigla"`
+	Nome   string       `json:"nome"`
 	Regiao RegionRecord `json:"regiao"`
 }

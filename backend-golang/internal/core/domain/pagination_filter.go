@@ -1,6 +1,5 @@
 package domain
 
-
 type PaginacaoFilter struct {
 	Page int `json:"pagina"`
 	Size int `json:"tamanho"`
@@ -10,10 +9,9 @@ type PaginacaoFilter struct {
 	Ordem   string `json:"ordem"`
 }
 
-
 type PaginacaoResponse[T any] struct {
 	Dados []T `json:"dados"`
-	Page int `json:"pagina"`
-	Size int `json:"tamanho"`
+	Page  int `json:"pagina"`
+	Size  int `json:"tamanho"`
 	Total int `json:"total"`
 }

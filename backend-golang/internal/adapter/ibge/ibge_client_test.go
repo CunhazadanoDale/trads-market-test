@@ -34,8 +34,6 @@ func TestPopulationRecordPopulation(t *testing.T) {
 	}
 }
 
-
-
 func TestPopulationRecordPopulationYearNotFound(t *testing.T) {
 	record := dtos.PopulationRecord{
 		Localidade: dtos.Localidade{

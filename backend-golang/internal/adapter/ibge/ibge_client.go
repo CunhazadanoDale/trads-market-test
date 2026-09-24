@@ -12,11 +12,10 @@ import (
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 )
 
-
 type Client struct {
-	baseURL    string
+	baseURL            string
 	baseURLLocalidades string
-	httpClient *http.Client
+	httpClient         *http.Client
 }
 
 func NewIbgeClient(baseURL string, baseURLLocalidades string, httpClient *http.Client) *Client {
@@ -26,46 +25,46 @@ func NewIbgeClient(baseURL string, baseURLLocalidades string, httpClient *http.C
 		}
 	}
 	return &Client{
-		baseURL:    baseURL,
+		baseURL:            baseURL,
 		baseURLLocalidades: baseURLLocalidades,
-		httpClient: httpClient,
+		httpClient:         httpClient,
 	}
 }
 
-func (c *Client) Get(ctx context.Context, path string, 
+func (c *Client) Get(ctx context.Context, path string,
 	query url.Values, target any) error {
-		endpoint := strings.TrimRight(c.baseURL, "/") + "/" + strings.TrimLeft(path,"/")
+	endpoint := strings.TrimRight(c.baseURL, "/") + "/" + strings.TrimLeft(path, "/")
 
-		if len(query) > 0 {
-			endpoint += "?" + query.Encode()
-		}
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-		if err != nil {
-			return fmt.Errorf("criar IBGE request: %w", err)
-		}
-
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("executar IBGE request: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-			return fmt.Errorf("IBGE API retornou status %d", resp.StatusCode,)
-		}
-
-		if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
-			return fmt.Errorf("decodificar resposta IBGE: %w", err)
-		}
-
-		return nil
+	if len(query) > 0 {
+		endpoint += "?" + query.Encode()
 	}
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("criar IBGE request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("executar IBGE request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("IBGE API retornou status %d", resp.StatusCode)
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		return fmt.Errorf("decodificar resposta IBGE: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) GetFromBase(ctx context.Context, path string, query url.Values, target any) error {
-	endpoint := strings.TrimRight(c.baseURLLocalidades, "/") + "/" + strings.TrimLeft(path,"/")
+	endpoint := strings.TrimRight(c.baseURLLocalidades, "/") + "/" + strings.TrimLeft(path, "/")
 
 	if len(query) > 0 {
 		endpoint += "?" + query.Encode()

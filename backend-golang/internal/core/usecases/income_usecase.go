@@ -19,9 +19,9 @@ type IncomeUsecaseImpl struct {
 	ibgeClient *ibge.Client
 }
 
-func NewIncomeUsecaseImpl (repo out.IncomeRepository, ibgeClient *ibge.Client) *IncomeUsecaseImpl {
+func NewIncomeUsecaseImpl(repo out.IncomeRepository, ibgeClient *ibge.Client) *IncomeUsecaseImpl {
 	return &IncomeUsecaseImpl{
-		repo: repo,
+		repo:       repo,
 		ibgeClient: ibgeClient,
 	}
 }

@@ -34,9 +34,9 @@ func (s *StateUseCaseImpl) Import(ctx context.Context) error {
 	for _, item := range states {
 		state := domain.State{
 			IBGECode: item.ID,
-			Name: item.Nome,
-			UF: item.Sigla,
-			Region: item.Regiao.Nome,
+			Name:     item.Nome,
+			UF:       item.Sigla,
+			Region:   item.Regiao.Nome,
 		}
 
 		if err := s.repo.Upsert(ctx, &state); err != nil {

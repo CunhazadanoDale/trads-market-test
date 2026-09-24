@@ -19,7 +19,7 @@ type GDPUsecaseImpl struct {
 	ibge *ibge.Client
 }
 
-func NewGDPUsecaseImpl (repo out.GDPRepository, ibge *ibge.Client) *GDPUsecaseImpl {
+func NewGDPUsecaseImpl(repo out.GDPRepository, ibge *ibge.Client) *GDPUsecaseImpl {
 	return &GDPUsecaseImpl{
 		repo: repo,
 		ibge: ibge,

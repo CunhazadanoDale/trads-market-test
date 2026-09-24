@@ -19,7 +19,7 @@ type CityUsecaseImpl struct {
 
 func NewCityUsecaseImpl(repo out.CityRepository, ibgeClient *ibge.Client) *CityUsecaseImpl {
 	return &CityUsecaseImpl{
-		repo: repo,
+		repo:       repo,
 		ibgeClient: ibgeClient,
 	}
 }
@@ -40,19 +40,19 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 		}
 
 		for _, item := range cities {
-			city := domain.City {
+			city := domain.City{
 				IBGECode: item.ID,
-				Name: item.Nome,
+				Name:     item.Nome,
 			}
 
 			if err := c.repo.Upsert(ctx, &city, state.ID); err != nil {
 				return fmt.Errorf("upsert city %d (%s) : %w",
-				city.IBGECode, city.Name, err)
+					city.IBGECode, city.Name, err)
 			}
 		}
 
 		fmt.Printf("%s: %d municípios importados\n",
-			state.Sigla, len(cities),)
+			state.Sigla, len(cities))
 	}
 
 	return nil
@@ -72,8 +72,8 @@ var ordenarPermitido = map[string]bool{
 }
 
 var ordemPermitida = map[string]bool{
-	"":    true,
-	"asc": true,
+	"":     true,
+	"asc":  true,
 	"desc": true,
 }
 

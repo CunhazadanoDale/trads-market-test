@@ -14,7 +14,7 @@ type IncomeRepo struct {
 	db *pgxpool.Pool
 }
 
-func NewIncomeRepo (db *pgxpool.Pool) *IncomeRepo {
+func NewIncomeRepo(db *pgxpool.Pool) *IncomeRepo {
 	return &IncomeRepo{
 		db: db,
 	}

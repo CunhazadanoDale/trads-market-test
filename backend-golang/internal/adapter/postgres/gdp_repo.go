@@ -14,7 +14,7 @@ type GDPRepo struct {
 	db *pgxpool.Pool
 }
 
-func NewGDPRepo (db *pgxpool.Pool) *GDPRepo{
+func NewGDPRepo(db *pgxpool.Pool) *GDPRepo {
 	return &GDPRepo{
 		db: db,
 	}
