@@ -7,7 +7,7 @@ Painel React (Vite) consumindo a API do `backend-golang`.
 ```bash
 # 1. backend (na raiz do projeto)
 cd backend-golang
-go run ./cmd/api            # precisa do .env e do Postgres (docker-compose up -d postgres + make migrate-up)
+go run ./cmd/api            # precisa do .env e do Postgres (docker compose up -d postgres + make migrate-up)
 
 # 2. frontend
 cd frontend
