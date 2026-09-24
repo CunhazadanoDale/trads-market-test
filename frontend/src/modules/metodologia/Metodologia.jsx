@@ -26,8 +26,8 @@ const SOURCES = [
   },
   {
     indicator: 'Beneficiários de planos de saúde',
-    year: '2026',
-    source: 'ANS — PDA-047 Taxa de Cobertura de Planos de Saúde (dados abertos), agregado por município',
+    year: 'conforme importação',
+    source: 'ANS — dados abertos, agregado por município',
   },
   {
     indicator: 'Geografia (UF, região, município)',

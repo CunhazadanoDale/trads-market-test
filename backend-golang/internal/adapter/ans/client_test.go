@@ -71,6 +71,17 @@ func TestClientFetchErrorsWhenNoValidRows(t *testing.T) {
 	}
 }
 
+func TestClientFetchErrorsWhenURLNotConfigured(t *testing.T) {
+	client := NewClient("")
+	_, err := client.Fetch(context.Background())
+	if err == nil {
+		t.Fatal("Fetch() error = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "BASE_URL_ANS") {
+		t.Errorf("error = %v, want menção a BASE_URL_ANS", err)
+	}
+}
+
 func TestClientFetchFailsOnHTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)

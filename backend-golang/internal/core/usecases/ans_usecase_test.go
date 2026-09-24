@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
@@ -39,7 +40,7 @@ func TestANSUsecaseImportAggregatesByMunicipality(t *testing.T) {
 		{Year: 2026, IBGECode: 980000, Beneficiaries: 10},
 	}}
 	repo := &fakeANSRepository{missing: []int64{980000}}
-	uc := NewANSUsecase(fetcher, repo)
+	uc := NewANSUsecase(fetcher, repo, "Fonte de teste")
 
 	if err := uc.Import(context.Background()); err != nil {
 		t.Fatalf("Import() error = %v", err)
@@ -54,14 +55,29 @@ func TestANSUsecaseImportAggregatesByMunicipality(t *testing.T) {
 	if repo.upserted[0].Year != 2026 {
 		t.Errorf("upserted[0].Year = %d, want 2026", repo.upserted[0].Year)
 	}
-	if repo.upserted[0].Source == "" {
-		t.Error("upserted[0].Source = empty, want fonte preenchida")
+	if repo.upserted[0].Source != "Fonte de teste" {
+		t.Errorf("upserted[0].Source = %q, want %q", repo.upserted[0].Source, "Fonte de teste")
+	}
+}
+
+func TestANSUsecaseImportErrorsWhenFonteNotConfigured(t *testing.T) {
+	fetcher := &fakeANSFetcher{rows: []domain.ANSBeneficiaryRow{
+		{Year: 2026, IBGECode: 120005, Beneficiaries: 100},
+	}}
+	uc := NewANSUsecase(fetcher, &fakeANSRepository{}, "")
+
+	err := uc.Import(context.Background())
+	if err == nil {
+		t.Fatal("Import() error = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "ANS_FONTE") {
+		t.Errorf("error = %v, want menção a ANS_FONTE", err)
 	}
 }
 
 func TestANSUsecaseImportPropagatesFetchError(t *testing.T) {
 	fetcher := &fakeANSFetcher{err: errors.New("falha de rede")}
-	uc := NewANSUsecase(fetcher, &fakeANSRepository{})
+	uc := NewANSUsecase(fetcher, &fakeANSRepository{}, "Fonte de teste")
 
 	if err := uc.Import(context.Background()); err == nil {
 		t.Fatal("Import() error = nil, want error")
@@ -73,7 +89,7 @@ func TestANSUsecaseImportErrorsWhenNothingImportable(t *testing.T) {
 		{Year: 2026, IBGECode: 980000, Beneficiaries: 10},
 	}}
 	repo := &fakeANSRepository{missing: []int64{980000}}
-	uc := NewANSUsecase(fetcher, repo)
+	uc := NewANSUsecase(fetcher, repo, "Fonte de teste")
 
 	if err := uc.Import(context.Background()); err == nil {
 		t.Fatal("Import() error = nil, want error")
@@ -81,7 +97,7 @@ func TestANSUsecaseImportErrorsWhenNothingImportable(t *testing.T) {
 }
 
 func TestANSUsecaseImportErrorsOnEmptyDataset(t *testing.T) {
-	uc := NewANSUsecase(&fakeANSFetcher{}, &fakeANSRepository{})
+	uc := NewANSUsecase(&fakeANSFetcher{}, &fakeANSRepository{}, "Fonte de teste")
 
 	if err := uc.Import(context.Background()); err == nil {
 		t.Fatal("Import() error = nil, want error")
@@ -93,7 +109,7 @@ func TestANSUsecaseImportPropagatesUpsertError(t *testing.T) {
 		{Year: 2026, IBGECode: 120005, Beneficiaries: 100},
 	}}
 	repo := &fakeANSRepository{err: errors.New("erro no banco")}
-	uc := NewANSUsecase(fetcher, repo)
+	uc := NewANSUsecase(fetcher, repo, "Fonte de teste")
 
 	if err := uc.Import(context.Background()); err == nil {
 		t.Fatal("Import() error = nil, want error")

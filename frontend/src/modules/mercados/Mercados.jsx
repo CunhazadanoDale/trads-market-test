@@ -308,8 +308,11 @@ export default function Mercados() {
           <div className="mercados-guide-item">
             <dt>Ano e fonte</dt>
             <dd>
-              IBGE — população e renda: Censo 2022 · PIB: 2023. ANS — beneficiários de
-              planos: PDA-047 (2026). Os dados são importados das fontes oficiais para o
+              IBGE — população e renda: Censo 2022 · PIB: 2023.
+              {ansMetrics?.fonte
+                ? ` ANS — beneficiários de planos: ${ansMetrics.fonte} (${ansMetrics.ano}).`
+                : ''}{' '}
+              Os dados são importados das fontes oficiais para o
               banco da Trads.
             </dd>
           </div>

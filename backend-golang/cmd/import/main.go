@@ -26,6 +26,15 @@ func main() {
 
 	cfg := config.LoadConfig()
 
+	if target == "ans" || target == "all" {
+		if cfg.BaseUrlANS == "" {
+			log.Fatalf("BASE_URL_ANS não configurada: defina a variável de ambiente com a URL do arquivo CSV da ANS")
+		}
+		if cfg.AnsFonte == "" {
+			log.Fatalf("ANS_FONTE não configurada: defina a variável de ambiente com o rótulo da fonte ANS")
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		30*time.Minute,
@@ -121,7 +130,7 @@ func importIBGE(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
 func importANS(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
 	ansClient := ans.NewClient(cfg.BaseUrlANS)
 	ansRepository := postgres.NewANSRepo(db)
-	ansUsecase := usecases.NewANSUsecase(ansClient, ansRepository)
+	ansUsecase := usecases.NewANSUsecase(ansClient, ansRepository, cfg.AnsFonte)
 
 	importStart := time.Now()
 	if err := ansUsecase.Import(ctx); err != nil {

@@ -21,28 +21,26 @@ const (
 	downloadTimeout = 15 * time.Minute
 )
 
-const DefaultFileURL = "https://dadosabertos.ans.gov.br/FTP/PDA/taxa_de_cobertura_de_planos_de_saude-047/pda-047-taxa_cobertura.csv"
-
 var requiredHeader = []string{"PERIODO", "CD_MUNICIPIO"}
 
 type Client struct {
-	DefaultFileURL string
-	HTTPClient     *http.Client
+	FileURL    string
+	HTTPClient *http.Client
 }
 
 func NewClient(fileURL string) *Client {
-	if fileURL == "" {
-		fileURL = DefaultFileURL
-	}
-
 	return &Client{
-		DefaultFileURL: fileURL,
-		HTTPClient:     &http.Client{Timeout: downloadTimeout},
+		FileURL:    fileURL,
+		HTTPClient: &http.Client{Timeout: downloadTimeout},
 	}
 }
 
 func (c *Client) Fetch(ctx context.Context) ([]domain.ANSBeneficiaryRow, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.DefaultFileURL, nil)
+	if c.FileURL == "" {
+		return nil, fmt.Errorf("ANS: BASE_URL_ANS não configurada")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.FileURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("ANS: montar requisição do dataset: %w", err)
 	}

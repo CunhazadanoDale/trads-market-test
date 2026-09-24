@@ -12,10 +12,7 @@ import (
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 )
 
-const (
-	ansFonte         = "ANS PDA-047 Taxa de Cobertura"
-	ansMaxCodesInLog = 20
-)
+const ansMaxCodesInLog = 20
 
 type ANSFetcher interface {
 	Fetch(ctx context.Context) ([]domain.ANSBeneficiaryRow, error)
@@ -26,16 +23,22 @@ var _ in.ANSUsecase = (*ANSUsecaseImpl)(nil)
 type ANSUsecaseImpl struct {
 	fetcher ANSFetcher
 	repo    out.ANSRepository
+	fonte   string
 }
 
-func NewANSUsecase(fetcher ANSFetcher, repo out.ANSRepository) *ANSUsecaseImpl {
+func NewANSUsecase(fetcher ANSFetcher, repo out.ANSRepository, fonte string) *ANSUsecaseImpl {
 	return &ANSUsecaseImpl{
 		fetcher: fetcher,
 		repo:    repo,
+		fonte:   fonte,
 	}
 }
 
 func (a *ANSUsecaseImpl) Import(ctx context.Context) error {
+	if a.fonte == "" {
+		return fmt.Errorf("ANS_FONTE não configurada")
+	}
+
 	rows, err := a.fetcher.Fetch(ctx)
 	if err != nil {
 		return fmt.Errorf("buscar dataset da ANS: %w", err)
@@ -55,7 +58,7 @@ func (a *ANSUsecaseImpl) Import(ctx context.Context) error {
 			IBGECode:      row.IBGECode,
 			Year:          row.Year,
 			Beneficiaries: row.Beneficiaries,
-			Source:        ansFonte,
+			Source:        a.fonte,
 		})
 	}
 

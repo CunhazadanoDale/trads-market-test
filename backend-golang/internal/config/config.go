@@ -13,6 +13,7 @@ type Config struct {
 	BaseUrlIBGE        string
 	BaseUrlLocalidades string
 	BaseUrlANS         string
+	AnsFonte           string
 }
 
 func LoadConfig() *Config {
@@ -25,5 +26,6 @@ func LoadConfig() *Config {
 		BaseUrlIBGE:        os.Getenv("BASE_URL_IBGE"),
 		BaseUrlLocalidades: os.Getenv("BASE_URL_LOCALIDADES"),
 		BaseUrlANS:         os.Getenv("BASE_URL_ANS"),
+		AnsFonte:           os.Getenv("ANS_FONTE"),
 	}
 }
