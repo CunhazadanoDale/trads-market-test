@@ -86,7 +86,7 @@ export default function States() {
               </button>
             </div>
           ) : (
-            <DataGrid columns={columns} data={rows} selectable={false} />
+            <DataGrid columns={columns} data={rows} />
           )}
         </div>
       </div>

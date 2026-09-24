@@ -109,11 +109,10 @@ export default function CityDetail() {
                 <DataGrid
                   columns={identificationColumns}
                   data={identificationRows}
-                  selectable={false}
                 />
               </Panel>
               <Panel title="Indicadores" icon={<BarChart2 size={16} />}>
-                <DataGrid columns={indicatorColumns} data={indicatorRows} selectable={false} />
+                <DataGrid columns={indicatorColumns} data={indicatorRows} />
               </Panel>
             </>
           ) : null}

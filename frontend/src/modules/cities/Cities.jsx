@@ -150,7 +150,6 @@ export default function Cities() {
       <DataGrid
         columns={columns}
         data={rows}
-        selectable={false}
         onRowClick={(row) => navigate(`/cidades/${row.ibge_code}`, { state: { ibge: selected } })}
       />
     );

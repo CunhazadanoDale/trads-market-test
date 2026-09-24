@@ -180,7 +180,7 @@ export default function Mercados() {
           </div>
         ) : (
           <>
-            <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} selectable={false} />
+            <DataGrid columns={stateMetricColumns} data={stateMetrics ?? []} />
             <p className="panel-hint">
               {metricsCount} UF{metricsCount === 1 ? '' : 's'} · {metricsRegion ? `Região ${metricsRegion}` : 'todo o país'}
             </p>
