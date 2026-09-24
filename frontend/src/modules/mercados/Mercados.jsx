@@ -19,10 +19,12 @@ export default function Mercados() {
   const stateMetricsRes = useApiResource(
     ({ signal }) => getStateMetrics({ regiao: metricsRegion, signal }),
     [metricsRegion],
+    { enabled: metricsRegion !== '' },
   );
 
   const allMetrics = regionMetricsRes.data;
-  const stateMetrics = stateMetricsRes.data;
+  const activeMetricsRes = metricsRegion ? stateMetricsRes : regionMetricsRes;
+  const stateMetrics = activeMetricsRes.data;
 
   const regionMarkets = useMemo(() => {
     const markets = new Map();
@@ -167,12 +169,12 @@ export default function Mercados() {
             </select>
           </div>
         </div>
-        {stateMetricsRes.loading && !stateMetrics ? (
+        {activeMetricsRes.loading && !stateMetrics ? (
           <div className="loading-box">Carregando indicadores por UF…</div>
-        ) : stateMetricsRes.error ? (
+        ) : activeMetricsRes.error ? (
           <div className="error-box">
-            {stateMetricsRes.error.message}
-            <button type="button" className="error-retry" onClick={stateMetricsRes.reload}>
+            {activeMetricsRes.error.message}
+            <button type="button" className="error-retry" onClick={activeMetricsRes.reload}>
               Tentar novamente
             </button>
           </div>

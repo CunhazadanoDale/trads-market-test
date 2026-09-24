@@ -1,29 +1,39 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-/**
- * Executa uma chamada de serviço (fetcher) com loading, erro, cancelamento
- * e recarga manual.
- *
- * @param {(ctx: { signal: AbortSignal }) => Promise<any>} fetcher
- * @param {any[]} deps dependências estáveis que disparam nova chamada
- */
-export function useApiResource(fetcher, deps = []) {
+export function useApiResource(fetcher, deps = [], { enabled = true } = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [version, setVersion] = useState(0);
 
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   const reload = useCallback(() => setVersion((current) => current + 1), []);
 
+  const depsKey = JSON.stringify(deps);
+  const fetchKey = `${depsKey}|${version}|${enabled}`;
+  const [prevFetchKey, setPrevFetchKey] = useState(fetchKey);
+
+  if (prevFetchKey !== fetchKey) {
+    setPrevFetchKey(fetchKey);
+    if (enabled) {
+      setLoading(true);
+      setError(null);
+    } else {
+      setData(null);
+      setLoading(false);
+      setError(null);
+    }
+  }
+
   useEffect(() => {
+    if (!enabled) return;
+
     const controller = new AbortController();
     let alive = true;
-
-    setLoading(true);
-    setError(null);
 
     Promise.resolve(fetcherRef.current({ signal: controller.signal }))
       .then((result) => {
@@ -41,8 +51,12 @@ export function useApiResource(fetcher, deps = []) {
       alive = false;
       controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, version]);
+  }, [depsKey, version, enabled]);
 
-  return { data, loading, error, reload };
+  return {
+    data: enabled ? data : null,
+    loading: enabled ? loading : false,
+    error: enabled ? error : null,
+    reload,
+  };
 }
