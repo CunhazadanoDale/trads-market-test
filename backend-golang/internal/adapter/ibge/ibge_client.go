@@ -104,15 +104,6 @@ func (c *Client) GetFromBase(ctx context.Context, path string, query url.Values,
 	return nil
 }
 
-func (c *Client) GetAggregates(ctx context.Context) ([]dtos.Aggregate, error) {
-	var response []dtos.Aggregate
-	if err := c.Get(ctx, "/agregados", nil, &response); err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}
-
 func (c *Client) GetPopulation2022(ctx context.Context) ([]dtos.PopulationRecord, error) {
 	query := url.Values{}
 	query.Set("localidades", "N6[all]")
