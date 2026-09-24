@@ -45,7 +45,7 @@ func main() {
 
 	stageStart = time.Now()
 	if err := cityService.Import(ctx); err != nil {
-		log.Fatal("falha ao importar cidades: %w", err)
+		log.Fatalf("falha ao importar cidades: %v", err)
 	}
 
 	log.Printf("etapa cidades: %s", time.Since(stageStart))
