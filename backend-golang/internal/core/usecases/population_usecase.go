@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
@@ -36,6 +37,8 @@ func (p *PopulationUsecaseImpl) Import2022(ctx context.Context) error {
 		return fmt.Errorf("get population from IBGE: %w", err)
 	}
 
+	rows := make([]out.PopulationUpsert, 0, len(records))
+
 	for _, record := range records {
 		ibgeCode, err := strconv.ParseInt(record.Localidade.ID, 10, 64)
 		if err != nil {
@@ -49,11 +52,19 @@ func (p *PopulationUsecaseImpl) Import2022(ctx context.Context) error {
 				record.Localidade.Nome, err)
 		}
 
-		if err := p.repo.Upsert(ctx, ibgeCode, PopulationYear, population, PopulationSource); err != nil {
-			return fmt.Errorf("persist population for locality %q: %w",
-				record.Localidade.Nome, err)
-		}
+		rows = append(rows, out.PopulationUpsert{
+			IBGECode: ibgeCode,
+			Year:     PopulationYear,
+			Value:    population,
+			Source:   PopulationSource,
+		})
 	}
+
+	if err := p.repo.UpsertMany(ctx, rows); err != nil {
+		return fmt.Errorf("persistir população: %w", err)
+	}
+
+	log.Printf("%d linhas gravadas em population_indicators", len(rows))
 
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type CityRepository interface {
-	Upsert(ctx context.Context, city *domain.City, stateIBGECode int64) error
+	UpsertMany(ctx context.Context, cities []domain.City, stateIBGECode int64) error
 	FindByState(
 		ctx context.Context,
 		stateIBGECode int64,

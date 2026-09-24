@@ -14,6 +14,8 @@ import (
 
 var _ out.CityRepository = (*CityRepo)(nil)
 
+const cityUpsertChunk = 1000
+
 type CityRepo struct {
 	db *pgxpool.Pool
 }
@@ -24,7 +26,7 @@ func NewCityRepository(db *pgxpool.Pool) *CityRepo {
 	}
 }
 
-func (c *CityRepo) Upsert(ctx context.Context, city *domain.City, stateIBGECode int64) error {
+func (c *CityRepo) UpsertMany(ctx context.Context, cities []domain.City, stateIBGECode int64) error {
 	query := `INSERT INTO cities (
 			ibge_code,
 			state_id,
@@ -43,11 +45,55 @@ func (c *CityRepo) Upsert(ctx context.Context, city *domain.City, stateIBGECode 
 			updated_at = NOW()
 	`
 
-	_, err := c.db.Exec(
-		ctx, query, city.IBGECode, city.Name, stateIBGECode,
-	)
+	for start := 0; start < len(cities); start += cityUpsertChunk {
+		end := min(start+cityUpsertChunk, len(cities))
 
-	return err
+		if err := c.upsertChunk(ctx, query, cities[start:end], stateIBGECode); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *CityRepo) upsertChunk(
+	ctx context.Context,
+	query string,
+	chunk []domain.City,
+	stateIBGECode int64,
+) error {
+	tx, err := c.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx de cities: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	batch := &pgx.Batch{}
+	for _, city := range chunk {
+		batch.Queue(query, city.IBGECode, city.Name, stateIBGECode)
+	}
+
+	results := tx.SendBatch(ctx, batch)
+	defer results.Close()
+
+	for i := range chunk {
+		if _, err := results.Exec(); err != nil {
+			return fmt.Errorf(
+				"upsert cidade %d (%s): %w",
+				chunk[i].IBGECode, chunk[i].Name, err,
+			)
+		}
+	}
+
+	if err := results.Close(); err != nil {
+		return fmt.Errorf("fechar batch de cities: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit de cities: %w", err)
+	}
+
+	return nil
 }
 
 func (c *CityRepo) StateExists(ctx context.Context, stateIBGECode int64) (bool, error) {

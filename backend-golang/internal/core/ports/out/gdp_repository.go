@@ -2,6 +2,12 @@ package out
 
 import "context"
 
+type GDPUpsert struct {
+	IBGECode int64
+	Year     int
+	GDP      float64
+}
+
 type GDPRepository interface {
-	Upsert(ctx context.Context, ibgeCode int64, year int, gdp float64) error
+	UpsertMany(ctx context.Context, rows []GDPUpsert) error
 }

@@ -5,10 +5,13 @@ import (
 	"fmt"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var _ out.PopulationRepository = (*PopulationRepo)(nil)
+
+const populationUpsertChunk = 1000
 
 type PopulationRepo struct {
 	db *pgxpool.Pool
@@ -20,8 +23,8 @@ func NewPopulationRepo(db *pgxpool.Pool) *PopulationRepo {
 	}
 }
 
-func (p *PopulationRepo) Upsert(ctx context.Context, ibgeCode int64, year int, value int64, source string) error {
-	query := `INSERT INTO population_indicators (
+func (p *PopulationRepo) UpsertMany(ctx context.Context, rows []out.PopulationUpsert) error {
+	const query = `INSERT INTO population_indicators (
 			city_id,
 			year,
 			value,
@@ -39,13 +42,59 @@ func (p *PopulationRepo) Upsert(ctx context.Context, ibgeCode int64, year int, v
 			value = EXCLUDED.value,
 			updated_at = NOW()`
 
-	result, err := p.db.Exec(ctx, query, ibgeCode, year, value, source)
-	if err != nil {
-		return err
+	for start := 0; start < len(rows); start += populationUpsertChunk {
+		end := min(start+populationUpsertChunk, len(rows))
+
+		if err := p.upsertChunk(ctx, query, rows[start:end]); err != nil {
+			return err
+		}
 	}
 
-	if result.RowsAffected() == 0 {
-		return fmt.Errorf("cidade nao encontrada para o codigo IBGE: %d", ibgeCode)
+	return nil
+}
+
+func (p *PopulationRepo) upsertChunk(
+	ctx context.Context,
+	query string,
+	chunk []out.PopulationUpsert,
+) error {
+	tx, err := p.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx de population_indicators: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	batch := &pgx.Batch{}
+	for _, row := range chunk {
+		batch.Queue(query, row.IBGECode, row.Year, row.Value, row.Source)
+	}
+
+	results := tx.SendBatch(ctx, batch)
+	defer results.Close()
+
+	for i := range chunk {
+		tag, err := results.Exec()
+		if err != nil {
+			return fmt.Errorf(
+				"upsert população para o código IBGE %d: %w",
+				chunk[i].IBGECode, err,
+			)
+		}
+
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf(
+				"cidade nao encontrada para o codigo IBGE: %d",
+				chunk[i].IBGECode,
+			)
+		}
+	}
+
+	if err := results.Close(); err != nil {
+		return fmt.Errorf("fechar batch de population_indicators: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit de population_indicators: %w", err)
 	}
 
 	return nil

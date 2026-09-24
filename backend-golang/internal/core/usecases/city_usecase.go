@@ -38,16 +38,17 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 			return fmt.Errorf("capturar cidades do estado %s : %w", state.Sigla, err)
 		}
 
+		batch := make([]domain.City, 0, len(cities))
+
 		for _, item := range cities {
-			city := domain.City{
+			batch = append(batch, domain.City{
 				IBGECode: item.ID,
 				Name:     item.Nome,
-			}
+			})
+		}
 
-			if err := c.repo.Upsert(ctx, &city, state.ID); err != nil {
-				return fmt.Errorf("upsert city %d (%s) : %w",
-					city.IBGECode, city.Name, err)
-			}
+		if err := c.repo.UpsertMany(ctx, batch, state.ID); err != nil {
+			return fmt.Errorf("upsert cidades de %s : %w", state.Sigla, err)
 		}
 
 		fmt.Printf("%s: %d municípios importados\n",

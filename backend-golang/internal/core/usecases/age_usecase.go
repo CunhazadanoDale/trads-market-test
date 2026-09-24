@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
@@ -75,6 +76,8 @@ func (a *AgeUsecaseImpl) Import(ctx context.Context) error {
 	if err := a.repo.UpsertMany(ctx, rows); err != nil {
 		return fmt.Errorf("persist age rows: %w", err)
 	}
+
+	log.Printf("%d linhas gravadas em age_indicators", len(rows))
 
 	return nil
 }

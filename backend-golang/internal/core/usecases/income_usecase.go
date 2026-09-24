@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
@@ -35,6 +36,8 @@ func (i *IncomeUsecaseImpl) Import(ctx context.Context) error {
 		)
 	}
 
+	rows := make([]out.IncomeUpsert, 0, len(records))
+
 	for _, record := range records {
 		ibgeCode, err := strconv.ParseInt(
 			record.Localidade.ID,
@@ -59,19 +62,18 @@ func (i *IncomeUsecaseImpl) Import(ctx context.Context) error {
 			)
 		}
 
-		if err := i.repo.Upsert(
-			ctx,
-			ibgeCode,
-			IncomeYear,
-			averageIncome,
-		); err != nil {
-			return fmt.Errorf(
-				"persist income for locality %q: %w",
-				record.Localidade.Nome,
-				err,
-			)
-		}
+		rows = append(rows, out.IncomeUpsert{
+			IBGECode:      ibgeCode,
+			Year:          IncomeYear,
+			AverageIncome: averageIncome,
+		})
 	}
+
+	if err := i.repo.UpsertMany(ctx, rows); err != nil {
+		return fmt.Errorf("persistir renda: %w", err)
+	}
+
+	log.Printf("%d linhas gravadas em income_indicators", len(rows))
 
 	return nil
 }

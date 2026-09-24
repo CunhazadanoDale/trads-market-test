@@ -17,7 +17,7 @@ type fakeCityRepository struct {
 	chamouFind     bool
 }
 
-func (f *fakeCityRepository) Upsert(context.Context, *domain.City, int64) error {
+func (f *fakeCityRepository) UpsertMany(context.Context, []domain.City, int64) error {
 	return nil
 }
 

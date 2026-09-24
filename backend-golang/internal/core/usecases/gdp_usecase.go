@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
@@ -35,6 +36,8 @@ func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 		)
 	}
 
+	rows := make([]out.GDPUpsert, 0, len(records))
+
 	for _, record := range records {
 		ibgeCode, err := strconv.ParseInt(
 			record.Localidade.ID,
@@ -59,19 +62,18 @@ func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 			)
 		}
 
-		if err := g.repo.Upsert(
-			ctx,
-			ibgeCode,
-			GDPYear,
-			gdp,
-		); err != nil {
-			return fmt.Errorf(
-				"persist GDP for locality %q: %w",
-				record.Localidade.Nome,
-				err,
-			)
-		}
+		rows = append(rows, out.GDPUpsert{
+			IBGECode: ibgeCode,
+			Year:     GDPYear,
+			GDP:      gdp,
+		})
 	}
+
+	if err := g.repo.UpsertMany(ctx, rows); err != nil {
+		return fmt.Errorf("persistir PIB: %w", err)
+	}
+
+	log.Printf("%d linhas gravadas em gdp_indicators", len(rows))
 
 	return nil
 }

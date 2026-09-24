@@ -2,6 +2,12 @@ package out
 
 import "context"
 
+type IncomeUpsert struct {
+	IBGECode      int64
+	Year          int
+	AverageIncome float64
+}
+
 type IncomeRepository interface {
-	Upsert(ctx context.Context, ibgeCode int64, year int, averageIncome float64) error
+	UpsertMany(ctx context.Context, rows []IncomeUpsert) error
 }
