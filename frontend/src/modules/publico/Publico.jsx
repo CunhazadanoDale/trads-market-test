@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, PieChart, Users } from 'lucide-react';
 import './Publico.css';
+import { HorizontalBarChart } from '../../app/components/HorizontalBarChart';
 import { Panel } from '../../app/components/Panel';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
@@ -46,8 +47,18 @@ export default function Publico() {
 
   const age = ageRes.data;
   const ageGroups = useMemo(() => age?.grupos ?? [], [age]);
-  const maxAgePopulation =
-    ageGroups.length > 0 ? Math.max(...ageGroups.map((group) => group.populacao)) : 1;
+
+  const ageTooltipContent = (group) => {
+    const share = age && age.total > 0 ? (group.populacao / age.total) * 100 : 0;
+    return {
+      title: group.faixa,
+      rows: [
+        { label: 'População', value: formatInteger(group.populacao) },
+        { label: '% do total', value: formatPercent(share) },
+        { label: 'Renda média', value: formatIncome({ value: group.renda_media_cidades }) },
+      ],
+    };
+  };
 
   const ageScope = [
     ageRegion ? `Região ${ageRegion}` : '',
@@ -116,27 +127,22 @@ export default function Publico() {
           <div className="loading-box">Sem dado de faixa etária.</div>
         ) : (
           <>
-            <ul className="age-list">
-              {ageGroups.map((group) => (
-                <li key={group.faixa} className="age-item">
-                  <span className="age-name" title={group.faixa}>{group.faixa}</span>
-                  <span className="age-bar">
-                    <span
-                      className="age-bar-fill"
-                      style={{ width: `${(group.populacao / maxAgePopulation) * 100}%` }}
-                    />
-                  </span>
-                  <span className="age-count">
-                    {formatInteger(group.populacao)} · {formatPercent((group.populacao / age.total) * 100)}
-                  </span>
-                  <span className="age-income">
-                    {formatIncome({ value: group.renda_media_cidades })}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <HorizontalBarChart
+              data={ageGroups}
+              labelKey="faixa"
+              barKey="populacao"
+              rowHeight={30}
+              barSize={14}
+              labelWidth={130}
+              valueAxis={{
+                dataKey: 'renda_media_cidades',
+                width: 130,
+                format: (value) => formatIncome({ value }),
+              }}
+              tooltip={ageTooltipContent}
+            />
             <p className="panel-hint">
-              Renda média das cidades: renda das cidades onde vivem as pessoas de cada faixa, ponderada pela população da faixa.
+              Renda média das cidades na coluna à direita: renda das cidades onde vivem as pessoas de cada faixa, ponderada pela população da faixa · passe o mouse sobre a barra para ver população da faixa e % do total.
             </p>
             <p className="panel-hint">
               Total {formatInteger(age.total)} pessoas · {ageScope || 'todo o país'} · Censo {age.ano} · IBGE/SIDRA 9514
