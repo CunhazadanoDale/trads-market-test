@@ -1,17 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart2, Globe, Info, Map as MapIcon } from 'lucide-react';
+import { BarChart2, Globe, Info, Map as MapIcon, Percent } from 'lucide-react';
 import './Mercados.css';
 import { DataGrid } from '../../app/components/DataGrid';
 import { Panel } from '../../app/components/Panel';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
-import { getStateMetrics } from '../../services/dashboard';
-import { formatGDP, formatIncome, formatInteger, formatPopulation } from '../../utils/format';
+import { getANSMetrics, getStateMetrics } from '../../services/dashboard';
+import { ANS_SORT_FIELDS, buildANSRanking } from '../../utils/ansRanking';
+import { formatGDP, formatIncome, formatInteger, formatPenetration, formatPopulation } from '../../utils/format';
 
 export default function Mercados() {
   const statesRes = useApiResource(getStates, []);
   const [metricsRegion, setMetricsRegion] = useState('');
+  const [ansRegion, setAnsRegion] = useState('');
+  const [ansSort, setAnsSort] = useState('penetracao');
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
 
@@ -21,6 +24,9 @@ export default function Mercados() {
     [metricsRegion],
     { enabled: metricsRegion !== '' },
   );
+
+  const ansRes = useApiResource(({ signal }) => getANSMetrics({ regiao: ansRegion, signal }), [ansRegion]);
+  const ansMetrics = ansRes.data;
 
   const allMetrics = regionMetricsRes.data;
   const activeMetricsRes = metricsRegion ? stateMetricsRes : regionMetricsRes;
@@ -100,6 +106,40 @@ export default function Mercados() {
       field: 'indicators',
       width: '18%',
       render: (value) => formatGDP(value?.gdp),
+    },
+  ];
+
+  const ansRanking = useMemo(
+    () =>
+      buildANSRanking(ansMetrics?.municipios, { sortBy: ansSort, limit: 10 }).map((row, index) => ({
+        ...row,
+        posicao: index + 1,
+      })),
+    [ansMetrics, ansSort],
+  );
+
+  const ansColumns = [
+    { label: '#', field: 'posicao', width: '6%' },
+    { label: 'Município', field: 'name', width: '30%' },
+    { label: 'UF', field: 'uf', width: '8%' },
+    { label: 'Região', field: 'region', width: '14%' },
+    {
+      label: 'Beneficiários',
+      field: 'beneficiarios',
+      width: '16%',
+      render: (value) => formatInteger(value),
+    },
+    {
+      label: 'População',
+      field: 'populacao',
+      width: '14%',
+      render: (value) => formatInteger(value),
+    },
+    {
+      label: 'Penetração',
+      field: 'penetracao',
+      width: '12%',
+      render: (value) => formatPenetration(value),
     },
   ];
 
@@ -188,6 +228,58 @@ export default function Mercados() {
         )}
       </Panel>
 
+      <Panel title="Penetração ANS" icon={<Percent size={16} />}>
+        <div className="panel-controls">
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="ans-region-filter">Região</label>
+            <select
+              id="ans-region-filter"
+              className="filter-select"
+              value={ansRegion}
+              onChange={(event) => setAnsRegion(event.target.value)}
+            >
+              <option value="">Todas</option>
+              {regionOptions.map((region) => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
+          </div>
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="ans-sort-filter">Ordenar por</label>
+            <select
+              id="ans-sort-filter"
+              className="filter-select"
+              value={ansSort}
+              onChange={(event) => setAnsSort(event.target.value)}
+            >
+              {ANS_SORT_FIELDS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {ansRes.loading && !ansMetrics ? (
+          <div className="loading-box">Carregando penetração ANS…</div>
+        ) : ansRes.error ? (
+          <div className="error-box">
+            {ansRes.error.message}
+            <button type="button" className="error-retry" onClick={ansRes.reload}>
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <>
+            <DataGrid columns={ansColumns} data={ansRanking} />
+            <p className="panel-hint">
+              Top 10 de {formatInteger(ansMetrics?.municipios?.length ?? 0)} municípios
+              {' · '}{ansRegion ? `Região ${ansRegion}` : 'todo o país'}
+              {' · '}ordenado por {ANS_SORT_FIELDS.find((option) => option.value === ansSort)?.label.toLowerCase()}
+              {' · '}fonte {ansMetrics?.fonte ?? 'ANS PDA-047 Taxa de Cobertura'} · população: Censo 2022.
+            </p>
+          </>
+        )}
+      </Panel>
+
       <Panel
         title="Como ler estes números"
         icon={<Info size={16} />}
@@ -211,8 +303,16 @@ export default function Mercados() {
           <div className="mercados-guide-item">
             <dt>Ano e fonte</dt>
             <dd>
-              IBGE — população e renda: Censo 2022 · PIB: 2023. Os dados são importados
-              da API do IBGE para o banco da Trads.
+              IBGE — população e renda: Censo 2022 · PIB: 2023. ANS — beneficiários de
+              planos: PDA-047 (2026). Os dados são importados das fontes oficiais para o
+              banco da Trads.
+            </dd>
+          </div>
+          <div className="mercados-guide-item">
+            <dt>Penetração ANS</dt>
+            <dd>
+              Beneficiários de planos do município divididos pela população do Censo 2022 —
+              quanto da população está coberta por plano. Top 10 com filtro de região.
             </dd>
           </div>
           <div className="mercados-guide-item">

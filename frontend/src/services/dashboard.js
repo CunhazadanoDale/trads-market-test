@@ -28,3 +28,14 @@ export function getAgeDistribution({ regiao = '', ibge = '', signal } = {}) {
 
   return api.get(`/api/v1/dashboard/age${query ? `?${query}` : ''}`, { signal });
 }
+
+export function getANSMetrics({ regiao = '', ibge = '', signal } = {}) {
+  const params = new URLSearchParams();
+
+  if (regiao) params.set('regiao', regiao);
+  if (ibge) params.set('ibge', ibge);
+
+  const query = params.toString();
+
+  return api.get(`/api/v1/dashboard/ans${query ? `?${query}` : ''}`, { signal });
+}

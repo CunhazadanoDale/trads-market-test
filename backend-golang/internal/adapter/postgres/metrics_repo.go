@@ -288,6 +288,95 @@ func (m *MetricsRepo) FindStates(
 	return states, nil
 }
 
+func (m *MetricsRepo) FindANS(
+	ctx context.Context,
+	regiao string,
+	ibgeCode int64,
+) (domain.ANSMetrics, error) {
+	const query = `
+		SELECT
+			a.ano,
+			c.ibge_code,
+			c.name,
+			s.uf,
+			s.region,
+			a.beneficiarios_ativos,
+			COALESCE(p.value, 0) AS populacao,
+			CASE
+				WHEN COALESCE(p.value, 0) > 0
+				THEN ROUND((a.beneficiarios_ativos::numeric * 100 / p.value)::numeric, 2)
+				ELSE 0::numeric
+			END AS penetracao,
+			a.fonte
+		FROM ans_beneficiarios a
+		INNER JOIN cities c ON c.ibge_code = a.ibge_code
+		INNER JOIN states s ON s.id = c.state_id
+		LEFT JOIN population_indicators p
+			ON p.city_id = c.id
+			AND p.year = (SELECT MAX(year) FROM population_indicators)
+		WHERE a.ano = (SELECT MAX(ano) FROM ans_beneficiarios)
+			AND ($1 = '' OR s.region = $1)
+			AND ($2 = 0 OR s.ibge_code = $2)
+		ORDER BY penetracao DESC, a.beneficiarios_ativos DESC, c.name ASC
+	`
+
+	rows, err := m.db.Query(ctx, query, regiao, ibgeCode)
+	if err != nil {
+		return domain.ANSMetrics{}, fmt.Errorf("query ans metrics: %w", err)
+	}
+	defer rows.Close()
+
+	metrics := domain.ANSMetrics{
+		Municipalities: make([]domain.ANSMunicipalityMetrics, 0),
+	}
+
+	for rows.Next() {
+		var item domain.ANSMunicipalityMetrics
+		var year int
+		var source string
+
+		if err := rows.Scan(
+			&year,
+			&item.IBGECode,
+			&item.Name,
+			&item.UF,
+			&item.Region,
+			&item.Beneficiaries,
+			&item.Population,
+			&item.Penetration,
+			&source,
+		); err != nil {
+			return domain.ANSMetrics{}, fmt.Errorf("scan ans metrics: %w", err)
+		}
+
+		if len(metrics.Municipalities) == 0 {
+			metrics.Year = year
+			metrics.Source = source
+		}
+
+		metrics.Beneficiaries += item.Beneficiaries
+		metrics.Population += item.Population
+		metrics.Municipalities = append(metrics.Municipalities, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return domain.ANSMetrics{}, fmt.Errorf("iterate ans metrics: %w", err)
+	}
+
+	if len(metrics.Municipalities) == 0 {
+		if ibgeCode != 0 {
+			return domain.ANSMetrics{}, domain.ErrStateNotFound
+		}
+		return domain.ANSMetrics{}, fmt.Errorf("ans metrics is empty")
+	}
+
+	if metrics.Population > 0 {
+		metrics.Penetration = float64(metrics.Beneficiaries) * 100 / float64(metrics.Population)
+	}
+
+	return metrics, nil
+}
+
 func (m *MetricsRepo) findPopulationsByStateIDs(
 	ctx context.Context,
 ) (map[int64]*domain.Indicator[int64], error) {

@@ -91,6 +91,56 @@ func (h *MetricsHandler) FindAgeDistribution(
 	writeJSON(w, http.StatusOK, dtos.NewAgeDistributionResponse(distribution))
 }
 
+func (h *MetricsHandler) FindANS(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	regiao, ok := parseRegion(w, r)
+	if !ok {
+		return
+	}
+
+	var ibgeCode int64
+
+	if raw := r.URL.Query().Get("ibge"); raw != "" {
+		value, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || value <= 0 {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"ibge deve ser um código IBGE de estado válido",
+			)
+			return
+		}
+
+		ibgeCode = value
+	}
+
+	metrics, err := h.useCase.FindANS(r.Context(), regiao, ibgeCode)
+	if err != nil {
+		if errors.Is(err, domain.ErrStateNotFound) {
+			writeError(
+				w,
+				http.StatusNotFound,
+				CodeStateNotFound,
+				fmt.Sprintf("estado com código IBGE %d não encontrado", ibgeCode),
+			)
+			return
+		}
+
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			CodeInternalError,
+			"falha ao buscar métricas da ANS",
+		)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dtos.NewANSMetricsResponse(metrics))
+}
+
 func (h *MetricsHandler) FindStates(
 	w http.ResponseWriter,
 	r *http.Request,

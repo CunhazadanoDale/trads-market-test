@@ -25,6 +25,11 @@ const SOURCES = [
     source: 'IBGE/SIDRA — agregado 5938, variável 37 (PIB a preços correntes, Mil R$)',
   },
   {
+    indicator: 'Beneficiários de planos de saúde',
+    year: '2026',
+    source: 'ANS — PDA-047 Taxa de Cobertura de Planos de Saúde (dados abertos), agregado por município',
+  },
+  {
     indicator: 'Geografia (UF, região, município)',
     year: '—',
     source: 'IBGE — códigos oficiais de UF, região e município',
@@ -65,8 +70,9 @@ export default function Metodologia() {
           </tbody>
         </table>
         <p className="panel-hint">
-          Todo dado entra pela importação da API do IBGE e vive no banco próprio da Trads —
-          a interface não consulta o IBGE direto.
+          Todo dado entra pela importação das fontes oficiais (API do IBGE e dados
+          abertos da ANS) e vive no banco próprio da Trads — a interface não consulta
+          as fontes direto.
         </p>
       </Panel>
 
@@ -105,6 +111,14 @@ export default function Metodologia() {
             <dd>Soma do PIB municipal: a UF soma suas cidades; a região soma suas UFs.</dd>
           </div>
           <div className="metodologia-guide-item">
+            <dt>Penetração ANS (%)</dt>
+            <dd>
+              Beneficiários de planos médico-hospitalares somados por município (sexo e
+              faixa etária somados) divididos pela população do Censo 2022.
+              <code className="met-formula">beneficiários_ans ÷ população_cidade × 100</code>
+            </dd>
+          </div>
+          <div className="metodologia-guide-item">
             <dt>% por faixa etária</dt>
             <dd>
               Participação da faixa no recorte escolhido (país, região ou UF).
@@ -137,17 +151,18 @@ export default function Metodologia() {
           <div className="metodologia-guide-item">
             <dt>Onde cada filtro age</dt>
             <dd>
-              Faixa etária (?regiao= e ?ibge=) e tabela por UF (?regiao=) filtram no
-              servidor; Estados filtra no navegador; Cidades busca e ordena no servidor.
-              O painel Mercados por Região não é afetado pelo filtro da tabela — ele
-              sempre compara as cinco regiões.
+              Faixa etária (?regiao= e ?ibge=), Penetração ANS (?regiao=) e tabela por
+              UF (?regiao=) filtram no servidor; Estados filtra no navegador; Cidades
+              busca e ordena no servidor. O painel Mercados por Região não é afetado
+              pelo filtro da tabela — ele sempre compara as cinco regiões.
             </dd>
           </div>
           <div className="metodologia-guide-item">
             <dt>Caminho do dado</dt>
             <dd>
-              API do IBGE → importação (serviço import do docker compose) → PostgreSQL →
-              API Go → esta interface (React + Vite).
+              API do IBGE → importação (serviço import do docker compose) e dados
+              abertos da ANS → importação (serviço import_ans, perfil ans) →
+              PostgreSQL → API Go → esta interface (React + Vite).
             </dd>
           </div>
           <div className="metodologia-guide-item">

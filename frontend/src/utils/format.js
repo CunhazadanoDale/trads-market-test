@@ -33,3 +33,10 @@ export function formatPercent(value) {
   if (value == null) return '—';
   return `${percentFormat.format(value)}%`;
 }
+
+const penetrationFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+
+export function formatPenetration(value) {
+  if (value == null) return '—';
+  return `${penetrationFormat.format(value)}%`;
+}

@@ -11,8 +11,10 @@ type fakeMetricsRepository struct {
 	regiaoRecebida string
 	ibgeRecebido   int64
 	chamouFind     bool
+	chamouFindANS  bool
 
 	distribution domain.AgeDistribution
+	ansMetrics   domain.ANSMetrics
 }
 
 func (f *fakeMetricsRepository) FindNational(context.Context) (domain.NationalMetrics, error) {
@@ -36,6 +38,17 @@ func (f *fakeMetricsRepository) FindAgeDistribution(
 	f.regiaoRecebida = regiao
 	f.ibgeRecebido = ibgeCode
 	return f.distribution, nil
+}
+
+func (f *fakeMetricsRepository) FindANS(
+	_ context.Context,
+	regiao string,
+	ibgeCode int64,
+) (domain.ANSMetrics, error) {
+	f.chamouFindANS = true
+	f.regiaoRecebida = regiao
+	f.ibgeRecebido = ibgeCode
+	return f.ansMetrics, nil
 }
 
 func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
@@ -85,6 +98,59 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 
 			if !repo.chamouFind {
 				t.Fatal("repo.FindAgeDistribution deveria ser chamado")
+			}
+
+			if repo.regiaoRecebida != tt.wantRegiao {
+				t.Errorf("regiao = %q, quero %q", repo.regiaoRecebida, tt.wantRegiao)
+			}
+
+			if repo.ibgeRecebido != tt.wantIbge {
+				t.Errorf("ibge = %d, quero %d", repo.ibgeRecebido, tt.wantIbge)
+			}
+		})
+	}
+}
+
+func TestMetricsUsecaseFindANSFiltros(t *testing.T) {
+	tests := []struct {
+		nome       string
+		regiao     string
+		ibgeCode   int64
+		wantRegiao string
+		wantIbge   int64
+	}{
+		{
+			nome:       "sem filtro passa zeros/vazio",
+			wantRegiao: "",
+			wantIbge:   0,
+		},
+		{
+			nome:       "filtro de regiao chega ao repo",
+			regiao:     "Sudeste",
+			wantRegiao: "Sudeste",
+			wantIbge:   0,
+		},
+		{
+			nome:       "filtro de uf chega ao repo",
+			ibgeCode:   35,
+			wantRegiao: "",
+			wantIbge:   35,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.nome, func(t *testing.T) {
+			repo := &fakeMetricsRepository{}
+			usecase := NewMetricsUseCaseImpl(repo)
+
+			_, err := usecase.FindANS(context.Background(), tt.regiao, tt.ibgeCode)
+
+			if err != nil {
+				t.Fatalf("err inesperado: %v", err)
+			}
+
+			if !repo.chamouFindANS {
+				t.Fatal("repo.FindANS deveria ser chamado")
 			}
 
 			if repo.regiaoRecebida != tt.wantRegiao {
