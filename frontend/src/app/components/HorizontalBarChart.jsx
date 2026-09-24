@@ -3,6 +3,8 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recha
 import { ChartTooltip } from './ChartTooltip';
 import './HorizontalBarChart.css';
 
+const LABEL_AXIS_ID = 'labels';
+
 export function HorizontalBarChart({
   data,
   labelKey,
@@ -45,7 +47,7 @@ export function HorizontalBarChart({
           <XAxis type="number" hide dataKey={barKey} />
           <YAxis
             type="category"
-            yAxisId="labels"
+            yAxisId={LABEL_AXIS_ID}
             dataKey={labelKey}
             width={labelWidth}
             interval={0}
@@ -66,10 +68,10 @@ export function HorizontalBarChart({
               tickFormatter={valueAxis.format}
             />
           ) : null}
-          <Tooltip cursor={{ className: 'hbar-cursor' }} content={handleTooltip} />
+          <Tooltip axisId={LABEL_AXIS_ID} cursor={{ className: 'hbar-cursor' }} content={handleTooltip} />
           <Bar
             dataKey={barKey}
-            yAxisId="labels"
+            yAxisId={LABEL_AXIS_ID}
             barSize={barSize}
             radius={[0, 4, 4, 0]}
             label={formatValue ? handleLabel : undefined}
