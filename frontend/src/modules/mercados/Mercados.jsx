@@ -3,12 +3,26 @@ import { Link } from 'react-router-dom';
 import { BarChart2, Globe, Info, Map as MapIcon, Percent } from 'lucide-react';
 import './Mercados.css';
 import { DataGrid } from '../../app/components/DataGrid';
+import { HorizontalBarChart } from '../../app/components/HorizontalBarChart';
 import { Panel } from '../../app/components/Panel';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getStates } from '../../services/states';
 import { getANSMetrics, getStateMetrics } from '../../services/dashboard';
 import { ANS_SORT_FIELDS, buildANSRanking } from '../../utils/ansRanking';
 import { formatGDP, formatIncome, formatInteger, formatPenetration, formatPopulation } from '../../utils/format';
+
+function regionTooltipContent(market) {
+  return {
+    title: market.region,
+    rows: [
+      { label: 'População', value: formatPopulation({ value: market.population }) },
+      { label: 'PIB (Mil R$)', value: formatGDP({ value: market.gdp }) },
+      { label: 'Renda média', value: formatIncome({ value: market.income }) },
+      { label: 'UFs', value: formatInteger(market.ufs) },
+      { label: 'Municípios', value: formatInteger(market.municipios) },
+    ],
+  };
+}
 
 export default function Mercados() {
   const statesRes = useApiResource(getStates, []);
@@ -70,8 +84,6 @@ export default function Mercados() {
       }))
       .sort((a, b) => b.population - a.population);
   }, [allMetrics]);
-
-  const maxRegionPopulation = regionMarkets.length > 0 ? regionMarkets[0].population : 1;
 
   const regionOptions = useMemo(
     () => [...new Set(states.map((state) => state.region))].sort((a, b) => a.localeCompare(b)),
@@ -168,25 +180,20 @@ export default function Mercados() {
           </div>
         ) : (
           <>
-            <ul className="region-list">
-              {regionMarkets.map((market) => (
-                <li key={market.region} className="region-item">
-                  <span className="region-name" title={market.region}>{market.region}</span>
-                  <span className="region-bar">
-                    <span
-                      className="region-bar-fill"
-                      style={{ width: `${(market.population / maxRegionPopulation) * 100}%` }}
-                    />
-                  </span>
-                  <span className="region-count">{formatPopulation({ value: market.population })}</span>
-                  <span className="region-meta">
-                    {market.ufs} UFs · {formatInteger(market.municipios)} municípios · PIB (Mil R$) {formatGDP({ value: market.gdp })} · renda média {formatIncome({ value: market.income })}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <HorizontalBarChart
+              data={regionMarkets}
+              labelKey="region"
+              barKey="population"
+              rowHeight={44}
+              barSize={18}
+              labelWidth={110}
+              valueWidth={110}
+              formatValue={(value) => formatPopulation({ value })}
+              tooltip={regionTooltipContent}
+            />
             <p className="panel-hint">
-              Ordenado por população · barra proporcional à maior região · renda média ponderada pela população de cada UF.
+              Ordenado por população · barra proporcional à maior região · valores de população ao fim de cada barra ·
+              passe o mouse sobre a barra para ver PIB, renda, UFs e municípios · renda média ponderada pela população de cada UF.
             </p>
           </>
         )}

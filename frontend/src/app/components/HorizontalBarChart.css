@@ -1,0 +1,30 @@
+.hbar-chart {
+  width: 100%;
+}
+
+.hbar-chart .recharts-bar-rectangle path {
+  fill: var(--primary);
+}
+
+.hbar-chart .recharts-tooltip-cursor {
+  fill: var(--bg-panel-hover);
+  stroke: none;
+}
+
+.hbar-chart .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+}
+
+.hbar-chart .recharts-right .recharts-cartesian-axis-tick-value {
+  fill: var(--text-main);
+}
+
+.hbar-chart .hbar-value {
+  fill: var(--text-main);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
