@@ -7,6 +7,9 @@ const MODULE_TITLES = {
   '/': 'Dashboard',
   '/estados': 'Estados',
   '/cidades': 'Cidades',
+  '/mercados': 'Mercados',
+  '/publico': 'Público',
+  '/metodologia': 'Metodologia',
 };
 
 export function TopBar() {
