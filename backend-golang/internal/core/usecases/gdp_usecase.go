@@ -26,7 +26,6 @@ func NewGDPUsecaseImpl(repo out.GDPRepository, ibge *ibge.Client) *GDPUsecaseImp
 	}
 }
 
-// Import implements [in.GDPUsecase].
 func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 	records, err := g.ibge.GetGDP2023(ctx)
 	if err != nil {

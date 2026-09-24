@@ -24,7 +24,6 @@ func NewCityRepository(db *pgxpool.Pool) *CityRepo {
 	}
 }
 
-// Upsert implements [out.CityRepository].
 func (c *CityRepo) Upsert(ctx context.Context, city *domain.City, stateIBGECode int64) error {
 	query := `INSERT INTO cities (
 			ibge_code,
@@ -71,7 +70,6 @@ func (c *CityRepo) StateExists(ctx context.Context, stateIBGECode int64) (bool, 
 	return exists, nil
 }
 
-// FindByState implements [out.CityRepository].
 func (c *CityRepo) FindByState(
 	ctx context.Context,
 	stateIBGECode int64,

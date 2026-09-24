@@ -30,7 +30,6 @@ func NewPopulationUsecaseImpl(repo out.PopulationRepository, ibgeClient *ibge.Cl
 	}
 }
 
-// Import2022 implements [in.PopulationUsecase].
 func (p *PopulationUsecaseImpl) Import2022(ctx context.Context) error {
 	records, err := p.ibgeClient.GetPopulation2022(ctx)
 	if err != nil {

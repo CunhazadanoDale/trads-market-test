@@ -20,7 +20,6 @@ func NewPopulationRepo(db *pgxpool.Pool) *PopulationRepo {
 	}
 }
 
-// Upsert implements [out.PopulationRepository].
 func (p *PopulationRepo) Upsert(ctx context.Context, ibgeCode int64, year int, value int64, source string) error {
 	query := `INSERT INTO population_indicators (
 			city_id,

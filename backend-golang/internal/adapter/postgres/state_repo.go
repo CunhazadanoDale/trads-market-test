@@ -21,7 +21,6 @@ func NewStateRepo(db *pgxpool.Pool) *StateRepo {
 	}
 }
 
-// Upsert implements [out.StatesRepository].
 func (s *StateRepo) Upsert(ctx context.Context, state *domain.State) error {
 	query := `INSERT INTO states (
 			ibge_code,
@@ -46,7 +45,6 @@ func (s *StateRepo) Upsert(ctx context.Context, state *domain.State) error {
 	return err
 }
 
-// FindAll implements [out.StatesRepository].
 func (s *StateRepo) FindAll(ctx context.Context, regiao string) ([]domain.State, error) {
 	const query = `
 		SELECT

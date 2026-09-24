@@ -24,7 +24,6 @@ func NewStateUseCase(repo out.StatesRepository, ibgeClient *ibge.Client) *StateU
 	}
 }
 
-// Import implements [in.StateUseCase].
 func (s *StateUseCaseImpl) Import(ctx context.Context) error {
 	states, err := s.ibgeClient.GetStates(ctx)
 	if err != nil {
@@ -47,7 +46,6 @@ func (s *StateUseCaseImpl) Import(ctx context.Context) error {
 	return nil
 }
 
-// FindAll implements [in.StateUseCase].
 func (s *StateUseCaseImpl) FindAll(ctx context.Context, regiao string) ([]domain.State, error) {
 	states, err := s.repo.FindAll(ctx, regiao)
 	if err != nil {

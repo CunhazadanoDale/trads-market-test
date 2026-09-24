@@ -26,7 +26,6 @@ func NewIncomeUsecaseImpl(repo out.IncomeRepository, ibgeClient *ibge.Client) *I
 	}
 }
 
-// Upsert implements [out.IncomeRepository].
 func (i *IncomeUsecaseImpl) Import(ctx context.Context) error {
 	records, err := i.ibgeClient.GetIncome2022(ctx)
 	if err != nil {

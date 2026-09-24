@@ -20,7 +20,6 @@ func NewGDPRepo(db *pgxpool.Pool) *GDPRepo {
 	}
 }
 
-// Upsert implements [out.GDPRepository].
 func (g *GDPRepo) Upsert(ctx context.Context, ibgeCode int64, year int, gdp float64) error {
 	query := `
 		INSERT INTO gdp_indicators (

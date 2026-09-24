@@ -20,7 +20,6 @@ func NewIncomeRepo(db *pgxpool.Pool) *IncomeRepo {
 	}
 }
 
-// Upsert implements [out.IncomeRepository].
 func (i *IncomeRepo) Upsert(ctx context.Context, ibgeCode int64, year int, averageIncome float64) error {
 	query := `INSERT INTO income_indicators (
 			city_id,

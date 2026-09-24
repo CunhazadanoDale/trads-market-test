@@ -24,7 +24,6 @@ func NewCityUsecaseImpl(repo out.CityRepository, ibgeClient *ibge.Client) *CityU
 	}
 }
 
-// Import implements [in.CityUseCase].
 func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 	states, err := c.ibgeClient.GetStates(ctx)
 	if err != nil {
@@ -77,7 +76,6 @@ var ordemPermitida = map[string]bool{
 	"desc": true,
 }
 
-// FindByState implements [in.CityUseCase].
 func (c *CityUsecaseImpl) FindByState(
 	ctx context.Context,
 	stateIBGECode int64,
@@ -137,8 +135,6 @@ func (c *CityUsecaseImpl) FindByIBGECode(
 	return *detail, nil
 }
 
-// normalizePaginacao aplica os limites de paginacao:
-// page < 1 → 1, size < 1 → 20, size > 100 → 100.
 func normalizePaginacao(filter domain.PaginacaoFilter) domain.PaginacaoFilter {
 	if filter.Page < defaultPage {
 		filter.Page = defaultPage
