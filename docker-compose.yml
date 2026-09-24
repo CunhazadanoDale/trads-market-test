@@ -48,7 +48,7 @@ services:
     build: ./backend-golang
     image: trads-backend
     container_name: trads-import
-    restart: "no"
+    restart: "on-failure:3"
     command: ["import"]
     environment:
       - APP_ENV=production
@@ -97,7 +97,13 @@ services:
       postgres:
         condition: service_healthy
       import:
-        condition: service_completed_successfully
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - trads-network
 
@@ -108,7 +114,8 @@ services:
     ports:
       - "8085:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - trads-network
 
