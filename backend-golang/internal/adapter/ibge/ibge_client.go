@@ -12,6 +12,14 @@ import (
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 )
 
+const userAgent = "trads-market-test/1.0 (+https://github.com/CunhazadanoDale/trads-market-test)"
+
+var retryBackoffs = []time.Duration{
+	500 * time.Millisecond,
+	1 * time.Second,
+	2 * time.Second,
+}
+
 type Client struct {
 	baseURL            string
 	baseURLLocalidades string
@@ -33,75 +41,75 @@ func NewIbgeClient(baseURL string, baseURLLocalidades string, httpClient *http.C
 
 func (c *Client) Get(ctx context.Context, path string,
 	query url.Values, target any) error {
-	endpoint := strings.TrimRight(c.baseURL, "/") + "/" + strings.TrimLeft(path, "/")
+	return c.getFrom(ctx, c.baseURL, path, query, target)
+}
+
+func (c *Client) GetFromBase(ctx context.Context, path string, query url.Values, target any) error {
+	return c.getFrom(ctx, c.baseURLLocalidades, path, query, target)
+}
+
+func (c *Client) getFrom(ctx context.Context, baseURL string, path string,
+	query url.Values, target any) error {
+	endpoint := strings.TrimRight(baseURL, "/") + "/" + strings.TrimLeft(path, "/")
 
 	if len(query) > 0 {
 		endpoint += "?" + query.Encode()
 	}
 
+	for attempt := 0; ; attempt++ {
+		retryable, err := c.fetch(ctx, endpoint, target)
+		if err == nil {
+			return nil
+		}
+
+		if !retryable || attempt >= len(retryBackoffs) {
+			return err
+		}
+
+		if waitErr := waitBackoff(ctx, retryBackoffs[attempt]); waitErr != nil {
+			return fmt.Errorf("tentativa do IBGE interrompida: %w", waitErr)
+		}
+	}
+}
+
+func (c *Client) fetch(ctx context.Context, endpoint string, target any) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return fmt.Errorf("criar IBGE request: %w", err)
+		return false, fmt.Errorf("criar requisição do IBGE: %w", err)
 	}
 
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("executar IBGE request: %w", err)
+		return true, fmt.Errorf("executar requisição do IBGE: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("IBGE API retornou status %d", resp.StatusCode)
+		retryable := resp.StatusCode == http.StatusTooManyRequests ||
+			resp.StatusCode >= http.StatusInternalServerError
+		return retryable, fmt.Errorf("a API do IBGE retornou o status %d", resp.StatusCode)
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
-		return fmt.Errorf("decodificar resposta IBGE: %w", err)
+		return false, fmt.Errorf("decodificar resposta do IBGE: %w", err)
 	}
 
-	return nil
+	return false, nil
 }
 
-func (c *Client) GetFromBase(ctx context.Context, path string, query url.Values, target any) error {
-	endpoint := strings.TrimRight(c.baseURLLocalidades, "/") + "/" + strings.TrimLeft(path, "/")
+func waitBackoff(ctx context.Context, backoff time.Duration) error {
+	timer := time.NewTimer(backoff)
+	defer timer.Stop()
 
-	if len(query) > 0 {
-		endpoint += "?" + query.Encode()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
 	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodGet,
-		endpoint,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("create IBGE request: %w", err)
-	}
-
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("request IBGE API: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode < http.StatusOK ||
-		resp.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf(
-			"IBGE API returned status %d",
-			resp.StatusCode,
-		)
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
-		return fmt.Errorf("decode IBGE response: %w", err)
-	}
-
-	return nil
 }
 
 func (c *Client) GetPopulation2022(ctx context.Context) ([]dtos.PopulationRecord, error) {
