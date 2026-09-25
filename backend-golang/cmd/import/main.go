@@ -26,14 +26,8 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
-
-	if target == "ans" || target == "all" {
-		if cfg.BaseUrlANS == "" {
-			log.Fatalf("BASE_URL_ANS não configurada: defina a variável de ambiente com a URL do arquivo CSV da ANS")
-		}
-		if cfg.AnsFonte == "" {
-			log.Fatalf("ANS_FONTE não configurada: defina a variável de ambiente com o rótulo da fonte ANS")
-		}
+	if err := cfg.ValidateImport(target); err != nil {
+		log.Fatalf("configuração inválida: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(

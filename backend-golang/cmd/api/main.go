@@ -20,6 +20,9 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+	if err := cfg.ValidateAPI(); err != nil {
+		log.Fatalf("configuração inválida: %v", err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
