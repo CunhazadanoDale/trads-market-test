@@ -306,7 +306,7 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
-              <p className="panel-hint">Clique numa UF para trocar o estado dos painéis.</p>
+              <p className="panel-hint">Clique numa UF para trocar o painel Cidades.</p>
             </>
           )}
         </Panel>
