@@ -234,19 +234,24 @@ export default function Dashboard() {
                 </button>
               </div>
             ) : (
-              <ul className="city-list">
-                {(ranking.cities ?? []).map((city, index) => (
-                  <li key={city.ibge_code} className="city-item">
-                    <span className="city-ibge">#{index + 1}</span>
-                    <Link to={`/cidades/${city.ibge_code}`}>
-                      {city.name} ({city.state.uf})
-                    </Link>
-                    <span className="service-meta" style={{ marginLeft: 'auto' }}>
-                      {ranking.format(ranking.pick(city))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="city-list">
+                  {(ranking.cities ?? []).map((city, index) => (
+                    <li key={city.ibge_code} className="city-item">
+                      <span className="city-ibge">#{index + 1}</span>
+                      <Link to={`/cidades/${city.ibge_code}`}>
+                        {city.name} ({city.state.uf})
+                      </Link>
+                      <span className="service-meta" style={{ marginLeft: 'auto' }}>
+                        {ranking.format(ranking.pick(city))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="panel-hint">
+                  Ranking nacional — não muda com a UF selecionada.
+                </p>
+              </>
             )}
           </Panel>
         ))}
