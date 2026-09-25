@@ -149,6 +149,13 @@ export default function Dashboard() {
     topCitiesRes.reload();
   };
 
+  const refreshing =
+    statesRes.loading ||
+    healthRes.loading ||
+    citiesRes.loading ||
+    nationalRes.loading ||
+    topCitiesRes.loading;
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-toolbar">
@@ -172,15 +179,9 @@ export default function Dashboard() {
           type="button"
           className="btn btn--secondary"
           onClick={handleRefresh}
-          disabled={
-            statesRes.loading ||
-            healthRes.loading ||
-            citiesRes.loading ||
-            nationalRes.loading ||
-            topCitiesRes.loading
-          }
+          disabled={refreshing}
         >
-          <RefreshCw size={14} className={statesRes.loading ? 'spin' : undefined} />
+          <RefreshCw size={14} className={refreshing ? 'spin' : undefined} />
           Atualizar
         </button>
       </div>
