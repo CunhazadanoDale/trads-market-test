@@ -183,6 +183,24 @@ func TestNormalizePaginacao(t *testing.T) {
 			wantSize: 100,
 		},
 		{
+			nome:     "page gigante vira 10000",
+			filter:   domain.PaginacaoFilter{Page: 999999999, Size: 10},
+			wantPage: 10000,
+			wantSize: 10,
+		},
+		{
+			nome:     "page logo acima do maximo vira 10000",
+			filter:   domain.PaginacaoFilter{Page: 10001, Size: 10},
+			wantPage: 10000,
+			wantSize: 10,
+		},
+		{
+			nome:     "page no maximo passa direto",
+			filter:   domain.PaginacaoFilter{Page: 10000, Size: 10},
+			wantPage: 10000,
+			wantSize: 10,
+		},
+		{
 			nome:     "valores validos passam direto",
 			filter:   domain.PaginacaoFilter{Page: 3, Size: 50},
 			wantPage: 3,

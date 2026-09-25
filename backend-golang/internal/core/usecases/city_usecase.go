@@ -61,6 +61,7 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 const (
 	defaultPage     = 1
 	defaultPageSize = 20
+	maxPage         = 10000
 	maxPageSize     = 100
 )
 
@@ -139,6 +140,10 @@ func (c *CityUsecaseImpl) FindByIBGECode(
 func normalizePaginacao(filter domain.PaginacaoFilter) domain.PaginacaoFilter {
 	if filter.Page < defaultPage {
 		filter.Page = defaultPage
+	}
+
+	if filter.Page > maxPage {
+		filter.Page = maxPage
 	}
 
 	if filter.Size < 1 {
