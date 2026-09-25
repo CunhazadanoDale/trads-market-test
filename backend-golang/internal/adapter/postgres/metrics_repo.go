@@ -73,16 +73,17 @@ func (m *MetricsRepo) FindAgeDistribution(
 			SUM(a.population) AS population,
 			SUM(SUM(a.population)) OVER () AS total,
 			CASE
-				WHEN SUM(a.population) > 0
+				WHEN SUM(CASE WHEN i.average_income IS NOT NULL THEN a.population ELSE 0 END) > 0
 				THEN ROUND((
-					SUM(i.average_income * a.population) / SUM(a.population)
+					SUM(i.average_income * a.population) /
+					SUM(CASE WHEN i.average_income IS NOT NULL THEN a.population ELSE 0 END)
 				)::numeric, 2)
 				ELSE 0::numeric
 			END AS average_city_income
 		FROM age_indicators a
 		INNER JOIN cities c ON c.id = a.city_id
 		INNER JOIN states s ON s.id = c.state_id
-		INNER JOIN income_indicators i
+		LEFT JOIN income_indicators i
 			ON i.city_id = a.city_id AND i.year = a.year
 		WHERE a.year = (SELECT MAX(year) FROM age_indicators)
 			AND ($1 = '' OR s.region = $1)
