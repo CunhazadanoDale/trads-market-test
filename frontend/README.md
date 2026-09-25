@@ -23,13 +23,14 @@ crie um `.env` a partir do `.env.example` com `VITE_API_BASE_URL`.
 
 | Método | Caminho | Onde é usado |
 | --- | --- | --- |
-| GET | `/api/v1/states` | Dashboard, select do topo, módulo **Estados**, select do módulo **Cidades** |
+| GET | `/api/v1/states` | Dashboard, select do topo, módulo **Estados**, select do módulo **Cidades**, selects dos módulos **Mercados** e **Público** |
 | GET | `/api/v1/states/{ibgeCode}/cities?page&pageSize` | Painel de cidades do Dashboard e módulo **Cidades** (paginação) |
 | GET | `/api/v1/cities/{ibgeCode}` | Rota de detalhe `/cidades/:ibgeCode` |
 | GET | `/api/v1/dashboard/national` | Painel "Panorama nacional" do Dashboard |
-| GET | `/api/v1/dashboard/states` | Painel "UFs por indicador" do Dashboard |
+| GET | `/api/v1/dashboard/states?regiao` | Painel "UFs por indicador" do módulo **Mercados** |
 | GET | `/api/v1/dashboard/top-cities?limit` | Rankings do Dashboard (top PIB, renda e população) |
-| GET | `/api/v1/dashboard/age` | Painel "Distribuição por faixa etária" do Dashboard |
+| GET | `/api/v1/dashboard/age?regiao&ibge` | Painel "Distribuição por faixa etária" do módulo **Público** |
+| GET | `/api/v1/dashboard/ans?regiao&ibge` | Painel "Penetração ANS" do módulo **Mercados** |
 | GET | `/health` | Chip de status no TopBar e painel "Status dos Serviços" |
 | GET | `/health/db` | Idem, informando se o Postgres responde |
 
@@ -43,17 +44,21 @@ src/
     states.js      # GET /api/v1/states
     cities.js      # GET /api/v1/states/{ibge}/cities e /cities/{code}
     health.js      # GET /health e /health/db com latência
-    dashboard.js   # GET /api/v1/dashboard/{national,states,top-cities,age}
+    dashboard.js   # GET /api/v1/dashboard/{national,states,top-cities,age,ans}
   hooks/
-    useApiResource.js  # loading/erro/recancelamento/reload para qualquer serviço
+    useApiResource.js  # loading/erro/cancelamento/reload para qualquer serviço
   utils/
     format.js      # formatação pt-BR de indicadores (null => "—")
   app/
     design-system/ # variáveis + estilos globais
-    components/    # DataGrid, FilterPanel, Panel, StatusBadge, ApiStatus
+    components/    # DataGrid, FilterPanel, Panel, StatusBadge, ApiStatus,
+                   # HorizontalBarChart, ChartTooltip
     layout/        # AppShell, Sidebar, TopBar
   modules/
-    dashboard/     # cards + painéis (regiões, status, cidades, UFs)
+    dashboard/     # cards nacionais + rankings + painéis (cidades, estados, status)
+    metodologia/   # premissas, fontes das bases e dicionário de indicadores
+    mercados/      # painéis Mercados por Região, UFs por indicador e Penetração ANS
+    publico/       # painel Distribuição por faixa etária
     states/        # grid de estados com filtros (pesquisa/ região)
     cities/        # grid de cidades (paginação do backend) + rota de detalhe
 ```
