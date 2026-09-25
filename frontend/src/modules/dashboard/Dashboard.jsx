@@ -74,7 +74,7 @@ export default function Dashboard() {
       title: selectedState ? `Cidades em ${selectedState.uf}` : 'Cidades',
       value: !selectedState
         ? '—'
-        : citiesRes.loading && !citiesRes.data
+        : citiesRes.loading
           ? '…'
           : String(citiesRes.data?.total ?? 0),
       hint: 'total do estado selecionado',
@@ -172,7 +172,13 @@ export default function Dashboard() {
           type="button"
           className="btn btn--secondary"
           onClick={handleRefresh}
-          disabled={statesRes.loading || healthRes.loading}
+          disabled={
+            statesRes.loading ||
+            healthRes.loading ||
+            citiesRes.loading ||
+            nationalRes.loading ||
+            topCitiesRes.loading
+          }
         >
           <RefreshCw size={14} className={statesRes.loading ? 'spin' : undefined} />
           Atualizar
@@ -267,7 +273,7 @@ export default function Dashboard() {
         >
           {!selectedState ? (
             <div className="loading-box">Selecione um estado.</div>
-          ) : citiesRes.loading && !citiesRes.data ? (
+          ) : citiesRes.loading ? (
             <div className="loading-box">Carregando cidades…</div>
           ) : citiesRes.error ? (
             <div className="error-box">
