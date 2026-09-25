@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
@@ -31,7 +32,7 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 	}
 
 	for _, state := range states {
-		fmt.Printf("importando municipios de %s ... \n", state.Sigla)
+		log.Printf("importando municipios de %s ... ", state.Sigla)
 
 		cities, err := c.ibgeClient.GetCitiesByState(ctx, state.Sigla)
 		if err != nil {
@@ -51,7 +52,7 @@ func (c *CityUsecaseImpl) Import(ctx context.Context) error {
 			return fmt.Errorf("upsert cidades de %s : %w", state.Sigla, err)
 		}
 
-		fmt.Printf("%s: %d municípios importados\n",
+		log.Printf("%s: %d municípios importados",
 			state.Sigla, len(cities))
 	}
 
