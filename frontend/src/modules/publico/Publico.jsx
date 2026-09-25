@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, PieChart, Users } from 'lucide-react';
 import './Publico.css';
@@ -13,12 +13,19 @@ export default function Publico() {
   const statesRes = useApiResource(getStates, []);
   const [ageRegion, setAgeRegion] = useState('');
   const [ageIbge, setAgeIbge] = useState('');
+  const [ageFaixa, setAgeFaixa] = useState('');
+  const [faixaOptions, setFaixaOptions] = useState([]);
 
   const states = useMemo(() => statesRes.data ?? [], [statesRes.data]);
 
   const ageRes = useApiResource(
-    ({ signal }) => getAgeDistribution({ regiao: ageRegion, ibge: ageIbge, signal }),
-    [ageRegion, ageIbge],
+    ({ signal }) => getAgeDistribution({
+      regiao: ageRegion,
+      ibge: ageIbge,
+      faixa: ageFaixa,
+      signal,
+    }),
+    [ageRegion, ageIbge, ageFaixa],
   );
 
   const regionOptions = useMemo(
@@ -48,6 +55,12 @@ export default function Publico() {
   const age = ageRes.data;
   const ageGroups = useMemo(() => age?.grupos ?? [], [age]);
 
+  useEffect(() => {
+    if (!ageFaixa && ageGroups.length > 0) {
+      setFaixaOptions(ageGroups.map((group) => group.faixa));
+    }
+  }, [ageFaixa, ageGroups]);
+
   const ageTooltipContent = (group) => {
     const share = age && age.total > 0 ? (group.populacao / age.total) * 100 : 0;
     return {
@@ -63,6 +76,7 @@ export default function Publico() {
   const ageScope = [
     ageRegion ? `Região ${ageRegion}` : '',
     selectedAgeState ? `UF ${selectedAgeState.uf}` : '',
+    ageFaixa || '',
   ]
     .filter(Boolean)
     .join(' · ');
@@ -110,6 +124,20 @@ export default function Publico() {
                 <option key={state.ibge_code} value={String(state.ibge_code)}>
                   {`${state.uf} — ${state.name}`}
                 </option>
+              ))}
+            </select>
+          </div>
+          <div className="toolbar-field">
+            <label className="toolbar-label" htmlFor="age-faixa-filter">Faixa</label>
+            <select
+              id="age-faixa-filter"
+              className="filter-select"
+              value={ageFaixa}
+              onChange={(event) => setAgeFaixa(event.target.value)}
+            >
+              <option value="">Todas</option>
+              {faixaOptions.map((faixa) => (
+                <option key={faixa} value={faixa}>{faixa}</option>
               ))}
             </select>
           </div>

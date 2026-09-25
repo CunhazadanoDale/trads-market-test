@@ -18,11 +18,12 @@ export function getTopCities({ signal } = {}) {
   return api.get('/api/v1/dashboard/top-cities', { signal });
 }
 
-export function getAgeDistribution({ regiao = '', ibge = '', signal } = {}) {
+export function getAgeDistribution({ regiao = '', ibge = '', faixa = '', signal } = {}) {
   const params = new URLSearchParams();
 
   if (regiao) params.set('regiao', regiao);
   if (ibge) params.set('ibge', ibge);
+  if (faixa) params.set('faixa', faixa);
 
   const query = params.toString();
 
