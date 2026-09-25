@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -61,45 +62,51 @@ func importIBGE(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
 
 	importStart := time.Now()
 
+	failures := make([]string, 0)
+
 	stateRepository := postgres.NewStateRepo(db)
 	stateService := usecases.NewStateUseCase(stateRepository, ibgeClient)
 
 	stageStart := time.Now()
 	if err := stateService.Import(ctx); err != nil {
-		log.Fatalf("falha ao importar estados: %v", err)
+		failures = append(failures, fmt.Sprintf("estados: %v", err))
+		log.Printf("falha ao importar estados: %v", err)
+	} else {
+		log.Printf("etapa estados: %s", time.Since(stageStart))
 	}
-
-	log.Printf("etapa estados: %s", time.Since(stageStart))
 
 	cityRepository := postgres.NewCityRepository(db)
 	cityService := usecases.NewCityUsecaseImpl(cityRepository, ibgeClient)
 
 	stageStart = time.Now()
 	if err := cityService.Import(ctx); err != nil {
-		log.Fatalf("falha ao importar cidades: %v", err)
+		failures = append(failures, fmt.Sprintf("cidades: %v", err))
+		log.Printf("falha ao importar cidades: %v", err)
+	} else {
+		log.Printf("etapa cidades: %s", time.Since(stageStart))
 	}
-
-	log.Printf("etapa cidades: %s", time.Since(stageStart))
 
 	populationRepository := postgres.NewPopulationRepo(db)
 	populationService := usecases.NewPopulationUsecaseImpl(populationRepository, ibgeClient)
 
 	stageStart = time.Now()
 	if err := populationService.Import2022(ctx); err != nil {
-		log.Fatalf("falha ao importar população: %v", err)
+		failures = append(failures, fmt.Sprintf("população: %v", err))
+		log.Printf("falha ao importar população: %v", err)
+	} else {
+		log.Printf("etapa população: %s", time.Since(stageStart))
 	}
-
-	log.Printf("etapa população: %s", time.Since(stageStart))
 
 	incomeRepository := postgres.NewIncomeRepo(db)
 	incomeService := usecases.NewIncomeUsecaseImpl(incomeRepository, ibgeClient)
 
 	stageStart = time.Now()
 	if err := incomeService.Import(ctx); err != nil {
-		log.Fatalf("falha ao importar renda: %v", err)
+		failures = append(failures, fmt.Sprintf("renda: %v", err))
+		log.Printf("falha ao importar renda: %v", err)
+	} else {
+		log.Printf("etapa renda: %s", time.Since(stageStart))
 	}
-
-	log.Printf("etapa renda: %s", time.Since(stageStart))
 
 	gdpRepository := postgres.NewGDPRepo(db)
 	gdpUseCase := usecases.NewGDPUsecaseImpl(
@@ -109,20 +116,26 @@ func importIBGE(ctx context.Context, db *pgxpool.Pool, cfg *config.Config) {
 
 	stageStart = time.Now()
 	if err := gdpUseCase.Import(ctx); err != nil {
-		log.Fatalf("falha ao importar PIB: %v", err)
+		failures = append(failures, fmt.Sprintf("PIB: %v", err))
+		log.Printf("falha ao importar PIB: %v", err)
+	} else {
+		log.Printf("etapa PIB: %s", time.Since(stageStart))
 	}
-
-	log.Printf("etapa PIB: %s", time.Since(stageStart))
 
 	ageRepository := postgres.NewAgeRepo(db)
 	ageUsecase := usecases.NewAgeUsecaseImpl(ageRepository, ibgeClient)
 
 	stageStart = time.Now()
 	if err := ageUsecase.Import(ctx); err != nil {
-		log.Fatalf("falha ao importar faixa etária: %v", err)
+		failures = append(failures, fmt.Sprintf("faixa etária: %v", err))
+		log.Printf("falha ao importar faixa etária: %v", err)
+	} else {
+		log.Printf("etapa faixa etária: %s", time.Since(stageStart))
 	}
 
-	log.Printf("etapa faixa etária: %s", time.Since(stageStart))
+	if len(failures) > 0 {
+		log.Fatalf("importação IBGE incompleta: %s", strings.Join(failures, "; "))
+	}
 
 	log.Printf("IBGE import successfully em %s", time.Since(importStart))
 }
