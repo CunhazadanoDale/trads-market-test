@@ -376,7 +376,7 @@ func (m *MetricsRepo) FindANS(
 		if ibgeCode != 0 {
 			return domain.ANSMetrics{}, domain.ErrStateNotFound
 		}
-		return domain.ANSMetrics{}, fmt.Errorf("ans metrics is empty")
+		return metrics, nil
 	}
 
 	if metrics.Population > 0 {

@@ -274,6 +274,8 @@ export default function Mercados() {
               Tentar novamente
             </button>
           </div>
+        ) : ansMetrics?.municipios?.length === 0 ? (
+          <div className="loading-box">Sem dado de beneficiários ANS para este recorte.</div>
         ) : (
           <>
             <DataGrid columns={ansColumns} data={ansRanking} />
