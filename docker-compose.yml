@@ -21,7 +21,7 @@ services:
       - trads-network
 
   adminer:
-    image: adminer:latest
+    image: adminer:6.1.0
     container_name: trads-adminer
     restart: unless-stopped
     ports:
@@ -32,7 +32,7 @@ services:
       - trads-network
 
   migrate:
-    image: migrate/migrate:latest
+    image: migrate/migrate:v4.20.1
     container_name: trads-migrate
     entrypoint: ["migrate"]
     command: ["-path=/migrations", "-database", "postgres://trads:trads@postgres:5432/trads?sslmode=disable", "up"]
