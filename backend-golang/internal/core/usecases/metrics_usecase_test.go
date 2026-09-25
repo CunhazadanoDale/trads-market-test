@@ -10,6 +10,7 @@ import (
 type fakeMetricsRepository struct {
 	regiaoRecebida string
 	ibgeRecebido   int64
+	faixaRecebida  string
 	chamouFind     bool
 	chamouFindANS  bool
 
@@ -33,10 +34,12 @@ func (f *fakeMetricsRepository) FindAgeDistribution(
 	_ context.Context,
 	regiao string,
 	ibgeCode int64,
+	faixa string,
 ) (domain.AgeDistribution, error) {
 	f.chamouFind = true
 	f.regiaoRecebida = regiao
 	f.ibgeRecebido = ibgeCode
+	f.faixaRecebida = faixa
 	return f.distribution, nil
 }
 
@@ -56,25 +59,37 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 		nome       string
 		regiao     string
 		ibgeCode   int64
+		faixa      string
 		wantRegiao string
 		wantIbge   int64
+		wantFaixa  string
 	}{
 		{
 			nome:       "sem filtro passa zeros/vazio",
 			wantRegiao: "",
 			wantIbge:   0,
+			wantFaixa:  "",
 		},
 		{
 			nome:       "filtro de regiao chega ao repo",
 			regiao:     "Norte",
 			wantRegiao: "Norte",
 			wantIbge:   0,
+			wantFaixa:  "",
 		},
 		{
 			nome:       "filtro de uf chega ao repo",
 			ibgeCode:   12,
 			wantRegiao: "",
 			wantIbge:   12,
+			wantFaixa:  "",
+		},
+		{
+			nome:       "filtro de faixa chega ao repo",
+			faixa:      "0 a 4 anos",
+			wantRegiao: "",
+			wantIbge:   0,
+			wantFaixa:  "0 a 4 anos",
 		},
 		{
 			nome:       "regiao e uf juntas chegam ao repo",
@@ -82,6 +97,16 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 			ibgeCode:   12,
 			wantRegiao: "Norte",
 			wantIbge:   12,
+			wantFaixa:  "",
+		},
+		{
+			nome:       "regiao, uf e faixa juntas chegam ao repo",
+			regiao:     "Norte",
+			ibgeCode:   12,
+			faixa:      "70 anos ou mais",
+			wantRegiao: "Norte",
+			wantIbge:   12,
+			wantFaixa:  "70 anos ou mais",
 		},
 	}
 
@@ -90,7 +115,12 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 			repo := &fakeMetricsRepository{}
 			usecase := NewMetricsUseCaseImpl(repo)
 
-			_, err := usecase.FindAgeDistribution(context.Background(), tt.regiao, tt.ibgeCode)
+			_, err := usecase.FindAgeDistribution(
+				context.Background(),
+				tt.regiao,
+				tt.ibgeCode,
+				tt.faixa,
+			)
 
 			if err != nil {
 				t.Fatalf("err inesperado: %v", err)
@@ -106,6 +136,10 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 
 			if repo.ibgeRecebido != tt.wantIbge {
 				t.Errorf("ibge = %d, quero %d", repo.ibgeRecebido, tt.wantIbge)
+			}
+
+			if repo.faixaRecebida != tt.wantFaixa {
+				t.Errorf("faixa = %q, quero %q", repo.faixaRecebida, tt.wantFaixa)
 			}
 		})
 	}

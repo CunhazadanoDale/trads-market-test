@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
@@ -67,8 +68,30 @@ func (h *MetricsHandler) FindAgeDistribution(
 		ibgeCode = value
 	}
 
-	distribution, err := h.useCase.FindAgeDistribution(r.Context(), regiao, ibgeCode)
+	faixa := strings.TrimSpace(r.URL.Query().Get("faixa"))
+
+	if len(faixa) > 40 {
+		writeError(
+			w,
+			http.StatusBadRequest,
+			CodeInvalidRequest,
+			"faixa deve ter no máximo 40 caracteres",
+		)
+		return
+	}
+
+	distribution, err := h.useCase.FindAgeDistribution(r.Context(), regiao, ibgeCode, faixa)
 	if err != nil {
+		if errors.Is(err, domain.ErrAgeGroupNotFound) {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"faixa etária não encontrada",
+			)
+			return
+		}
+
 		if errors.Is(err, domain.ErrStateNotFound) {
 			writeError(
 				w,

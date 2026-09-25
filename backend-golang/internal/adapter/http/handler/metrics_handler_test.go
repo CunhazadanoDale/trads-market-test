@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/domain"
@@ -23,6 +24,12 @@ type fakeMetricsUseCase struct {
 	ansRegiao string
 	ansIbge   int64
 	ansErr    error
+
+	ageChamou bool
+	ageRegiao string
+	ageIbge   int64
+	ageFaixa  string
+	ageErr    error
 }
 
 func (f *fakeMetricsUseCase) FindNational(context.Context) (domain.NationalMetrics, error) {
@@ -34,11 +41,27 @@ func (f *fakeMetricsUseCase) FindStates(context.Context, string) ([]domain.State
 }
 
 func (f *fakeMetricsUseCase) FindAgeDistribution(
-	context.Context,
-	string,
-	int64,
+	_ context.Context,
+	regiao string,
+	ibgeCode int64,
+	faixa string,
 ) (domain.AgeDistribution, error) {
-	return domain.AgeDistribution{}, nil
+	f.ageChamou = true
+	f.ageRegiao = regiao
+	f.ageIbge = ibgeCode
+	f.ageFaixa = faixa
+
+	if f.ageErr != nil {
+		return domain.AgeDistribution{}, f.ageErr
+	}
+
+	return domain.AgeDistribution{
+		Year:  2022,
+		Total: 100,
+		Groups: []domain.AgeGroupMetrics{
+			{AgeGroup: faixa, Population: 100},
+		},
+	}, nil
 }
 
 func (f *fakeMetricsUseCase) FindTopCities(_ context.Context, limit int) (domain.TopCities, error) {
@@ -269,6 +292,109 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 
 			if tt.wantChamou && fake.ansIbge != tt.wantIbge {
 				t.Fatalf("ibge = %d, quero %d", fake.ansIbge, tt.wantIbge)
+			}
+
+			if tt.wantCode != "" {
+				var body struct {
+					Error struct {
+						Code string `json:"code"`
+					} `json:"error"`
+				}
+				if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+					t.Fatalf("erro ao decodificar resposta: %v", err)
+				}
+				if body.Error.Code != tt.wantCode {
+					t.Fatalf("code = %q, quero %q", body.Error.Code, tt.wantCode)
+				}
+			}
+		})
+	}
+}
+
+func TestMetricsHandlerFindAgeDistribution(t *testing.T) {
+	tests := []struct {
+		nome       string
+		query      string
+		ageErr     error
+		wantStatus int
+		wantCode   string
+		wantChamou bool
+		wantRegiao string
+		wantIbge   int64
+		wantFaixa  string
+	}{
+		{
+			nome:       "sem parametro faixa devolve 200",
+			query:      "",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantFaixa:  "",
+		},
+		{
+			nome:       "faixa vazia devolve 200",
+			query:      "?faixa=",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantFaixa:  "",
+		},
+		{
+			nome:       "faixa valida chega ao usecase",
+			query:      "?regiao=Sul&faixa=0%20a%204%20anos",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantRegiao: "Sul",
+			wantFaixa:  "0 a 4 anos",
+		},
+		{
+			nome:       "faixa com 41 caracteres devolve 400",
+			query:      "?faixa=" + strings.Repeat("a", 41),
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: false,
+		},
+		{
+			nome:       "faixa desconhecida devolve 400",
+			query:      "?faixa=inexistente",
+			ageErr:     domain.ErrAgeGroupNotFound,
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: true,
+			wantFaixa:  "inexistente",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.nome, func(t *testing.T) {
+			fake := &fakeMetricsUseCase{ageErr: tt.ageErr}
+			handler := NewMetricsHandler(fake)
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/v1/dashboard/age"+tt.query,
+				nil,
+			)
+			rec := httptest.NewRecorder()
+
+			handler.FindAgeDistribution(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Fatalf("status = %d, quero %d", rec.Code, tt.wantStatus)
+			}
+
+			if fake.ageChamou != tt.wantChamou {
+				t.Fatalf("ageChamou = %v, quero %v", fake.ageChamou, tt.wantChamou)
+			}
+
+			if tt.wantChamou && fake.ageRegiao != tt.wantRegiao {
+				t.Fatalf("regiao = %q, quero %q", fake.ageRegiao, tt.wantRegiao)
+			}
+
+			if tt.wantChamou && fake.ageIbge != tt.wantIbge {
+				t.Fatalf("ibge = %d, quero %d", fake.ageIbge, tt.wantIbge)
+			}
+
+			if tt.wantChamou && fake.ageFaixa != tt.wantFaixa {
+				t.Fatalf("faixa = %q, quero %q", fake.ageFaixa, tt.wantFaixa)
 			}
 
 			if tt.wantCode != "" {

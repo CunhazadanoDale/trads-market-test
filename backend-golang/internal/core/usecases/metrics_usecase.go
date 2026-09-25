@@ -44,8 +44,9 @@ func (m *MetricsUseCaseImpl) FindAgeDistribution(
 	ctx context.Context,
 	regiao string,
 	ibgeCode int64,
+	faixa string,
 ) (domain.AgeDistribution, error) {
-	return m.repo.FindAgeDistribution(ctx, regiao, ibgeCode)
+	return m.repo.FindAgeDistribution(ctx, regiao, ibgeCode, faixa)
 }
 
 func (m *MetricsUseCaseImpl) FindANS(

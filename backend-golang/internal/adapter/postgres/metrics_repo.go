@@ -65,34 +65,39 @@ func (m *MetricsRepo) FindAgeDistribution(
 	ctx context.Context,
 	regiao string,
 	ibgeCode int64,
+	faixa string,
 ) (domain.AgeDistribution, error) {
 	const query = `
+		WITH recorte AS (
+			SELECT a.year, a.city_id, a.age_group, a.population, i.average_income
+			FROM age_indicators a
+			JOIN cities c ON c.id = a.city_id
+			JOIN states s ON s.id = c.state_id
+			LEFT JOIN income_indicators i ON i.city_id = a.city_id AND i.year = a.year
+			WHERE a.year = (SELECT MAX(year) FROM age_indicators)
+				AND ($1 = '' OR s.region = $1)
+				AND ($2 = 0 OR s.ibge_code = $2)
+		)
 		SELECT
-			a.year,
-			a.age_group,
-			SUM(a.population) AS population,
-			SUM(SUM(a.population)) OVER () AS total,
+			year,
+			age_group,
+			SUM(population) AS population,
+			(SELECT SUM(r2.population) FROM recorte r2) AS total,
 			CASE
-				WHEN SUM(CASE WHEN i.average_income IS NOT NULL THEN a.population ELSE 0 END) > 0
+				WHEN SUM(CASE WHEN average_income IS NOT NULL THEN population ELSE 0 END) > 0
 				THEN ROUND((
-					SUM(i.average_income * a.population) /
-					SUM(CASE WHEN i.average_income IS NOT NULL THEN a.population ELSE 0 END)
+					SUM(average_income * population) /
+					SUM(CASE WHEN average_income IS NOT NULL THEN population ELSE 0 END)
 				)::numeric, 2)
 				ELSE 0::numeric
 			END AS average_city_income
-		FROM age_indicators a
-		INNER JOIN cities c ON c.id = a.city_id
-		INNER JOIN states s ON s.id = c.state_id
-		LEFT JOIN income_indicators i
-			ON i.city_id = a.city_id AND i.year = a.year
-		WHERE a.year = (SELECT MAX(year) FROM age_indicators)
-			AND ($1 = '' OR s.region = $1)
-			AND ($2 = 0 OR s.ibge_code = $2)
-		GROUP BY a.year, a.age_group
-		ORDER BY CAST(SPLIT_PART(a.age_group, ' ', 1) AS int)
+		FROM recorte
+		WHERE ($3 = '' OR age_group = $3)
+		GROUP BY year, age_group
+		ORDER BY CAST(SPLIT_PART(age_group, ' ', 1) AS int)
 	`
 
-	rows, err := m.db.Query(ctx, query, regiao, ibgeCode)
+	rows, err := m.db.Query(ctx, query, regiao, ibgeCode, faixa)
 	if err != nil {
 		return domain.AgeDistribution{}, fmt.Errorf(
 			"query age distribution: %w",
@@ -132,6 +137,9 @@ func (m *MetricsRepo) FindAgeDistribution(
 	}
 
 	if len(distribution.Groups) == 0 {
+		if faixa != "" {
+			return domain.AgeDistribution{}, domain.ErrAgeGroupNotFound
+		}
 		if ibgeCode != 0 {
 			return domain.AgeDistribution{}, domain.ErrStateNotFound
 		}
