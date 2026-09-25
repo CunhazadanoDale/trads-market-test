@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 	"github.com/jackc/pgx/v5"
@@ -42,12 +43,20 @@ func (g *GDPRepo) UpsertMany(ctx context.Context, rows []out.GDPUpsert) error {
 			updated_at = NOW()
 	`
 
+	missing := 0
 	for start := 0; start < len(rows); start += gdpUpsertChunk {
 		end := min(start+gdpUpsertChunk, len(rows))
 
-		if err := g.upsertChunk(ctx, query, rows[start:end]); err != nil {
+		chunkMissing, err := g.upsertChunk(ctx, query, rows[start:end])
+		if err != nil {
 			return err
 		}
+
+		missing += chunkMissing
+	}
+
+	if missing > 0 {
+		log.Printf("gdp_indicators: %d indicadores sem cidade correspondente ignorados", missing)
 	}
 
 	return nil
@@ -57,10 +66,10 @@ func (g *GDPRepo) upsertChunk(
 	ctx context.Context,
 	query string,
 	chunk []out.GDPUpsert,
-) error {
+) (int, error) {
 	tx, err := g.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin tx de gdp_indicators: %w", err)
+		return 0, fmt.Errorf("begin tx de gdp_indicators: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -72,30 +81,30 @@ func (g *GDPRepo) upsertChunk(
 	results := tx.SendBatch(ctx, batch)
 	defer results.Close()
 
+	missing := 0
+
 	for i := range chunk {
 		tag, err := results.Exec()
 		if err != nil {
-			return fmt.Errorf(
+			return 0, fmt.Errorf(
 				"upsert PIB para o código IBGE %d: %w",
 				chunk[i].IBGECode, err,
 			)
 		}
 
 		if tag.RowsAffected() == 0 {
-			return fmt.Errorf(
-				"city not found for IBGE code %d",
-				chunk[i].IBGECode,
-			)
+			missing++
+			continue
 		}
 	}
 
 	if err := results.Close(); err != nil {
-		return fmt.Errorf("fechar batch de gdp_indicators: %w", err)
+		return 0, fmt.Errorf("fechar batch de gdp_indicators: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit de gdp_indicators: %w", err)
+		return 0, fmt.Errorf("commit de gdp_indicators: %w", err)
 	}
 
-	return nil
+	return missing, nil
 }

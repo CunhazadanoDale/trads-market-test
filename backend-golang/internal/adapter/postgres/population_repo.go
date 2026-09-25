@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 	"github.com/jackc/pgx/v5"
@@ -42,12 +43,20 @@ func (p *PopulationRepo) UpsertMany(ctx context.Context, rows []out.PopulationUp
 			value = EXCLUDED.value,
 			updated_at = NOW()`
 
+	missing := 0
 	for start := 0; start < len(rows); start += populationUpsertChunk {
 		end := min(start+populationUpsertChunk, len(rows))
 
-		if err := p.upsertChunk(ctx, query, rows[start:end]); err != nil {
+		chunkMissing, err := p.upsertChunk(ctx, query, rows[start:end])
+		if err != nil {
 			return err
 		}
+
+		missing += chunkMissing
+	}
+
+	if missing > 0 {
+		log.Printf("population_indicators: %d indicadores sem cidade correspondente ignorados", missing)
 	}
 
 	return nil
@@ -57,10 +66,10 @@ func (p *PopulationRepo) upsertChunk(
 	ctx context.Context,
 	query string,
 	chunk []out.PopulationUpsert,
-) error {
+) (int, error) {
 	tx, err := p.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin tx de population_indicators: %w", err)
+		return 0, fmt.Errorf("begin tx de population_indicators: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -72,30 +81,30 @@ func (p *PopulationRepo) upsertChunk(
 	results := tx.SendBatch(ctx, batch)
 	defer results.Close()
 
+	missing := 0
+
 	for i := range chunk {
 		tag, err := results.Exec()
 		if err != nil {
-			return fmt.Errorf(
+			return 0, fmt.Errorf(
 				"upsert população para o código IBGE %d: %w",
 				chunk[i].IBGECode, err,
 			)
 		}
 
 		if tag.RowsAffected() == 0 {
-			return fmt.Errorf(
-				"cidade nao encontrada para o codigo IBGE: %d",
-				chunk[i].IBGECode,
-			)
+			missing++
+			continue
 		}
 	}
 
 	if err := results.Close(); err != nil {
-		return fmt.Errorf("fechar batch de population_indicators: %w", err)
+		return 0, fmt.Errorf("fechar batch de population_indicators: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit de population_indicators: %w", err)
+		return 0, fmt.Errorf("commit de population_indicators: %w", err)
 	}
 
-	return nil
+	return missing, nil
 }

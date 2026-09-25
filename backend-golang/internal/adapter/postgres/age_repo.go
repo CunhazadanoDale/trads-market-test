@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
 	"github.com/jackc/pgx/v5"
@@ -46,12 +47,20 @@ func (a *AgeRepo) UpsertMany(
 			updated_at = NOW()
 	`
 
+	missing := 0
 	for start := 0; start < len(rows); start += ageUpsertChunk {
 		end := min(start+ageUpsertChunk, len(rows))
 
-		if err := a.upsertChunk(ctx, query, rows[start:end]); err != nil {
+		chunkMissing, err := a.upsertChunk(ctx, query, rows[start:end])
+		if err != nil {
 			return err
 		}
+
+		missing += chunkMissing
+	}
+
+	if missing > 0 {
+		log.Printf("age_indicators: %d indicadores sem cidade correspondente ignorados", missing)
 	}
 
 	return nil
@@ -61,10 +70,10 @@ func (a *AgeRepo) upsertChunk(
 	ctx context.Context,
 	query string,
 	chunk []out.AgeUpsert,
-) error {
+) (int, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin tx de age_indicators: %w", err)
+		return 0, fmt.Errorf("begin tx de age_indicators: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -76,30 +85,30 @@ func (a *AgeRepo) upsertChunk(
 	results := tx.SendBatch(ctx, batch)
 	defer results.Close()
 
+	missing := 0
+
 	for i := range chunk {
 		tag, err := results.Exec()
 		if err != nil {
-			return fmt.Errorf(
+			return 0, fmt.Errorf(
 				"upsert age %q for IBGE code %d: %w",
 				chunk[i].AgeGroup, chunk[i].IBGECode, err,
 			)
 		}
 
 		if tag.RowsAffected() == 0 {
-			return fmt.Errorf(
-				"city not found for IBGE code %d",
-				chunk[i].IBGECode,
-			)
+			missing++
+			continue
 		}
 	}
 
 	if err := results.Close(); err != nil {
-		return fmt.Errorf("fechar batch de age_indicators: %w", err)
+		return 0, fmt.Errorf("fechar batch de age_indicators: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit de age_indicators: %w", err)
+		return 0, fmt.Errorf("commit de age_indicators: %w", err)
 	}
 
-	return nil
+	return missing, nil
 }
