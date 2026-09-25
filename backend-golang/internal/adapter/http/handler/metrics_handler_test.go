@@ -20,10 +20,12 @@ type fakeMetricsUseCase struct {
 	topLimit  int
 	chamouTop bool
 
-	ansChamou bool
-	ansRegiao string
-	ansIbge   int64
-	ansErr    error
+	ansChamou  bool
+	ansRegiao  string
+	ansIbge    int64
+	ansOrdenar string
+	ansLimit   int
+	ansErr     error
 
 	ageChamou bool
 	ageRegiao string
@@ -74,10 +76,14 @@ func (f *fakeMetricsUseCase) FindANS(
 	_ context.Context,
 	regiao string,
 	ibgeCode int64,
+	ordenar string,
+	limit int,
 ) (domain.ANSMetrics, error) {
 	f.ansChamou = true
 	f.ansRegiao = regiao
 	f.ansIbge = ibgeCode
+	f.ansOrdenar = ordenar
+	f.ansLimit = limit
 	return domain.ANSMetrics{}, f.ansErr
 }
 
@@ -195,20 +201,23 @@ func TestMetricsHandlerFindTopCities(t *testing.T) {
 
 func TestMetricsHandlerFindANS(t *testing.T) {
 	tests := []struct {
-		nome       string
-		query      string
-		ansErr     error
-		wantStatus int
-		wantCode   string
-		wantChamou bool
-		wantRegiao string
-		wantIbge   int64
+		nome        string
+		query       string
+		ansErr      error
+		wantStatus  int
+		wantCode    string
+		wantChamou  bool
+		wantRegiao  string
+		wantIbge    int64
+		wantOrdenar string
+		wantLimit   int
 	}{
 		{
 			nome:       "sem filtro devolve 200",
 			query:      "",
 			wantStatus: http.StatusOK,
 			wantChamou: true,
+			wantLimit:  10,
 		},
 		{
 			nome:       "regiao valida chega ao usecase",
@@ -216,6 +225,7 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 			wantStatus: http.StatusOK,
 			wantChamou: true,
 			wantRegiao: "Sul",
+			wantLimit:  10,
 		},
 		{
 			nome:       "regiao invalida devolve 400",
@@ -230,6 +240,7 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 			wantStatus: http.StatusOK,
 			wantChamou: true,
 			wantIbge:   35,
+			wantLimit:  10,
 		},
 		{
 			nome:       "ibge nao numerico devolve 400",
@@ -253,6 +264,7 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 			wantCode:   CodeStateNotFound,
 			wantChamou: true,
 			wantIbge:   99,
+			wantLimit:  10,
 		},
 		{
 			nome:       "erro do usecase devolve 500",
@@ -261,6 +273,80 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 			wantStatus: http.StatusInternalServerError,
 			wantCode:   CodeInternalError,
 			wantChamou: true,
+			wantLimit:  10,
+		},
+		{
+			nome:        "ordenar por beneficiarios chega ao usecase",
+			query:       "?ordenar=beneficiarios",
+			wantStatus:  http.StatusOK,
+			wantChamou:  true,
+			wantOrdenar: "beneficiarios",
+			wantLimit:   10,
+		},
+		{
+			nome:        "ordenar por populacao chega ao usecase",
+			query:       "?ordenar=populacao",
+			wantStatus:  http.StatusOK,
+			wantChamou:  true,
+			wantOrdenar: "populacao",
+			wantLimit:   10,
+		},
+		{
+			nome:        "ordenar por penetracao chega ao usecase",
+			query:       "?ordenar=penetracao",
+			wantStatus:  http.StatusOK,
+			wantChamou:  true,
+			wantOrdenar: "penetracao",
+			wantLimit:   10,
+		},
+		{
+			nome:       "ordenar fora da allow list devolve 400",
+			query:      "?ordenar=nome",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: false,
+		},
+		{
+			nome:       "limit valido chega ao usecase",
+			query:      "?limit=25",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantLimit:  25,
+		},
+		{
+			nome:       "limit no minimo",
+			query:      "?limit=1",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantLimit:  1,
+		},
+		{
+			nome:       "limit no maximo",
+			query:      "?limit=100",
+			wantStatus: http.StatusOK,
+			wantChamou: true,
+			wantLimit:  100,
+		},
+		{
+			nome:       "limit nao numerico devolve 400",
+			query:      "?limit=abc",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: false,
+		},
+		{
+			nome:       "limit zero devolve 400",
+			query:      "?limit=0",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: false,
+		},
+		{
+			nome:       "limit acima de 100 devolve 400",
+			query:      "?limit=101",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   CodeInvalidRequest,
+			wantChamou: false,
 		},
 	}
 
@@ -292,6 +378,14 @@ func TestMetricsHandlerFindANS(t *testing.T) {
 
 			if tt.wantChamou && fake.ansIbge != tt.wantIbge {
 				t.Fatalf("ibge = %d, quero %d", fake.ansIbge, tt.wantIbge)
+			}
+
+			if tt.wantChamou && fake.ansOrdenar != tt.wantOrdenar {
+				t.Fatalf("ordenar = %q, quero %q", fake.ansOrdenar, tt.wantOrdenar)
+			}
+
+			if tt.wantChamou && fake.ansLimit != tt.wantLimit {
+				t.Fatalf("limit = %d, quero %d", fake.ansLimit, tt.wantLimit)
 			}
 
 			if tt.wantCode != "" {

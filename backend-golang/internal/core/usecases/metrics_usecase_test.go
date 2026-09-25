@@ -8,11 +8,13 @@ import (
 )
 
 type fakeMetricsRepository struct {
-	regiaoRecebida string
-	ibgeRecebido   int64
-	faixaRecebida  string
-	chamouFind     bool
-	chamouFindANS  bool
+	regiaoRecebida  string
+	ibgeRecebido    int64
+	faixaRecebida   string
+	ordenarRecebido string
+	limitRecebido   int
+	chamouFind      bool
+	chamouFindANS   bool
 
 	distribution domain.AgeDistribution
 	ansMetrics   domain.ANSMetrics
@@ -47,10 +49,14 @@ func (f *fakeMetricsRepository) FindANS(
 	_ context.Context,
 	regiao string,
 	ibgeCode int64,
+	ordenar string,
+	limit int,
 ) (domain.ANSMetrics, error) {
 	f.chamouFindANS = true
 	f.regiaoRecebida = regiao
 	f.ibgeRecebido = ibgeCode
+	f.ordenarRecebido = ordenar
+	f.limitRecebido = limit
 	return f.ansMetrics, nil
 }
 
@@ -147,11 +153,15 @@ func TestMetricsUsecaseFindAgeDistributionFiltros(t *testing.T) {
 
 func TestMetricsUsecaseFindANSFiltros(t *testing.T) {
 	tests := []struct {
-		nome       string
-		regiao     string
-		ibgeCode   int64
-		wantRegiao string
-		wantIbge   int64
+		nome        string
+		regiao      string
+		ibgeCode    int64
+		ordenar     string
+		limit       int
+		wantRegiao  string
+		wantIbge    int64
+		wantOrdenar string
+		wantLimit   int
 	}{
 		{
 			nome:       "sem filtro passa zeros/vazio",
@@ -159,16 +169,24 @@ func TestMetricsUsecaseFindANSFiltros(t *testing.T) {
 			wantIbge:   0,
 		},
 		{
-			nome:       "filtro de regiao chega ao repo",
-			regiao:     "Sudeste",
-			wantRegiao: "Sudeste",
-			wantIbge:   0,
+			nome:        "filtro de regiao chega ao repo",
+			regiao:      "Sudeste",
+			ordenar:     "beneficiarios",
+			limit:       25,
+			wantRegiao:  "Sudeste",
+			wantIbge:    0,
+			wantOrdenar: "beneficiarios",
+			wantLimit:   25,
 		},
 		{
-			nome:       "filtro de uf chega ao repo",
-			ibgeCode:   35,
-			wantRegiao: "",
-			wantIbge:   35,
+			nome:        "filtro de uf chega ao repo",
+			ibgeCode:    35,
+			ordenar:     "populacao",
+			limit:       1,
+			wantRegiao:  "",
+			wantIbge:    35,
+			wantOrdenar: "populacao",
+			wantLimit:   1,
 		},
 	}
 
@@ -177,7 +195,13 @@ func TestMetricsUsecaseFindANSFiltros(t *testing.T) {
 			repo := &fakeMetricsRepository{}
 			usecase := NewMetricsUseCaseImpl(repo)
 
-			_, err := usecase.FindANS(context.Background(), tt.regiao, tt.ibgeCode)
+			_, err := usecase.FindANS(
+				context.Background(),
+				tt.regiao,
+				tt.ibgeCode,
+				tt.ordenar,
+				tt.limit,
+			)
 
 			if err != nil {
 				t.Fatalf("err inesperado: %v", err)
@@ -193,6 +217,14 @@ func TestMetricsUsecaseFindANSFiltros(t *testing.T) {
 
 			if repo.ibgeRecebido != tt.wantIbge {
 				t.Errorf("ibge = %d, quero %d", repo.ibgeRecebido, tt.wantIbge)
+			}
+
+			if repo.ordenarRecebido != tt.wantOrdenar {
+				t.Errorf("ordenar = %q, quero %q", repo.ordenarRecebido, tt.wantOrdenar)
+			}
+
+			if repo.limitRecebido != tt.wantLimit {
+				t.Errorf("limit = %d, quero %d", repo.limitRecebido, tt.wantLimit)
 			}
 		})
 	}

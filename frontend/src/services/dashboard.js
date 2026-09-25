@@ -30,11 +30,13 @@ export function getAgeDistribution({ regiao = '', ibge = '', faixa = '', signal 
   return api.get(`/api/v1/dashboard/age${query ? `?${query}` : ''}`, { signal });
 }
 
-export function getANSMetrics({ regiao = '', ibge = '', signal } = {}) {
+export function getANSMetrics({ regiao = '', ibge = '', ordenar = '', limit = '', signal } = {}) {
   const params = new URLSearchParams();
 
   if (regiao) params.set('regiao', regiao);
   if (ibge) params.set('ibge', ibge);
+  if (ordenar) params.set('ordenar', ordenar);
+  if (limit) params.set('limit', limit);
 
   const query = params.toString();
 

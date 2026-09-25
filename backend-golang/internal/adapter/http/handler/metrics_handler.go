@@ -140,7 +140,48 @@ func (h *MetricsHandler) FindANS(
 		ibgeCode = value
 	}
 
-	metrics, err := h.useCase.FindANS(r.Context(), regiao, ibgeCode)
+	ordenar := r.URL.Query().Get("ordenar")
+
+	switch ordenar {
+	case "", "penetracao", "beneficiarios", "populacao":
+	default:
+		writeError(
+			w,
+			http.StatusBadRequest,
+			CodeInvalidRequest,
+			"ordenar deve ser penetracao, beneficiarios ou populacao",
+		)
+		return
+	}
+
+	limit := 10
+
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		value, err := strconv.Atoi(raw)
+		if err != nil {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"limit deve ser um número inteiro",
+			)
+			return
+		}
+
+		if value < 1 || value > 100 {
+			writeError(
+				w,
+				http.StatusBadRequest,
+				CodeInvalidRequest,
+				"limit deve estar entre 1 e 100",
+			)
+			return
+		}
+
+		limit = value
+	}
+
+	metrics, err := h.useCase.FindANS(r.Context(), regiao, ibgeCode, ordenar, limit)
 	if err != nil {
 		if errors.Is(err, domain.ErrStateNotFound) {
 			writeError(

@@ -53,6 +53,8 @@ func (m *MetricsUseCaseImpl) FindANS(
 	ctx context.Context,
 	regiao string,
 	ibgeCode int64,
+	ordenar string,
+	limit int,
 ) (domain.ANSMetrics, error) {
-	return m.repo.FindANS(ctx, regiao, ibgeCode)
+	return m.repo.FindANS(ctx, regiao, ibgeCode, ordenar, limit)
 }

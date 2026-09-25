@@ -39,7 +39,10 @@ export default function Mercados() {
     { enabled: metricsRegion !== '' },
   );
 
-  const ansRes = useApiResource(({ signal }) => getANSMetrics({ regiao: ansRegion, signal }), [ansRegion]);
+  const ansRes = useApiResource(
+    ({ signal }) => getANSMetrics({ regiao: ansRegion, ordenar: ansSort, limit: 10, signal }),
+    [ansRegion, ansSort],
+  );
   const ansMetrics = ansRes.data;
 
   const allMetrics = regionMetricsRes.data;
@@ -122,12 +125,8 @@ export default function Mercados() {
   ];
 
   const ansRanking = useMemo(
-    () =>
-      buildANSRanking(ansMetrics?.municipios, { sortBy: ansSort, limit: 10 }).map((row, index) => ({
-        ...row,
-        posicao: index + 1,
-      })),
-    [ansMetrics, ansSort],
+    () => buildANSRanking(ansMetrics?.municipios),
+    [ansMetrics],
   );
 
   const ansColumns = [
@@ -280,7 +279,7 @@ export default function Mercados() {
           <>
             <DataGrid columns={ansColumns} data={ansRanking} />
             <p className="panel-hint">
-              Top 10 de {formatInteger(ansMetrics?.municipios?.length ?? 0)} municípios
+              Top 10 de {formatInteger(ansMetrics?.total_municipios ?? 0)} municípios
               {' · '}{ansRegion ? `Região ${ansRegion}` : 'todo o país'}
               {' · '}ordenado por {ANS_SORT_FIELDS.find((option) => option.value === ansSort)?.label.toLowerCase()}
               {ansMetrics?.fonte ? (

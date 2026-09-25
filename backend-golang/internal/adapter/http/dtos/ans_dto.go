@@ -13,12 +13,13 @@ type ANSMunicipalityMetricsResponse struct {
 }
 
 type ANSMetricsResponse struct {
-	Year           int                              `json:"ano"`
-	Beneficiaries  int64                            `json:"beneficiarios"`
-	Population     int64                            `json:"populacao"`
-	Penetration    float64                          `json:"penetracao"`
-	Source         string                           `json:"fonte"`
-	Municipalities []ANSMunicipalityMetricsResponse `json:"municipios"`
+	Year                int                              `json:"ano"`
+	Beneficiaries       int64                            `json:"beneficiarios"`
+	Population          int64                            `json:"populacao"`
+	Penetration         float64                          `json:"penetracao"`
+	Source              string                           `json:"fonte"`
+	TotalMunicipalities int                              `json:"total_municipios"`
+	Municipalities      []ANSMunicipalityMetricsResponse `json:"municipios"`
 }
 
 func NewANSMetricsResponse(metrics domain.ANSMetrics) ANSMetricsResponse {
@@ -37,11 +38,12 @@ func NewANSMetricsResponse(metrics domain.ANSMetrics) ANSMetricsResponse {
 	}
 
 	return ANSMetricsResponse{
-		Year:           metrics.Year,
-		Beneficiaries:  metrics.Beneficiaries,
-		Population:     metrics.Population,
-		Penetration:    metrics.Penetration,
-		Source:         metrics.Source,
-		Municipalities: municipalities,
+		Year:                metrics.Year,
+		Beneficiaries:       metrics.Beneficiaries,
+		Population:          metrics.Population,
+		Penetration:         metrics.Penetration,
+		Source:              metrics.Source,
+		TotalMunicipalities: metrics.TotalMunicipalities,
+		Municipalities:      municipalities,
 	}
 }

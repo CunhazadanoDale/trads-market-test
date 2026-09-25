@@ -301,35 +301,43 @@ func (m *MetricsRepo) FindANS(
 	ctx context.Context,
 	regiao string,
 	ibgeCode int64,
+	ordenar string,
+	limit int,
 ) (domain.ANSMetrics, error) {
-	const query = `
-		SELECT
-			a.ano,
-			c.ibge_code,
-			c.name,
-			s.uf,
-			s.region,
-			a.beneficiarios_ativos,
-			COALESCE(p.value, 0) AS populacao,
-			CASE
-				WHEN COALESCE(p.value, 0) > 0
-				THEN ROUND((a.beneficiarios_ativos::numeric * 100 / p.value)::numeric, 2)
-				ELSE 0::numeric
-			END AS penetracao,
-			a.fonte
-		FROM ans_beneficiarios a
-		INNER JOIN cities c ON c.ibge_code = a.ibge_code
-		INNER JOIN states s ON s.id = c.state_id
-		LEFT JOIN population_indicators p
-			ON p.city_id = c.id
-			AND p.year = (SELECT MAX(year) FROM population_indicators)
-		WHERE a.ano = (SELECT MAX(ano) FROM ans_beneficiarios)
-			AND ($1 = '' OR s.region = $1)
-			AND ($2 = 0 OR s.ibge_code = $2)
-		ORDER BY penetracao DESC, a.beneficiarios_ativos DESC, c.name ASC
-	`
+	query := fmt.Sprintf(`
+		SELECT * FROM (
+			SELECT
+				a.ano,
+				c.ibge_code,
+				c.name,
+				s.uf,
+				s.region,
+				a.beneficiarios_ativos,
+				COALESCE(p.value, 0) AS populacao,
+				CASE
+					WHEN COALESCE(p.value, 0) > 0
+					THEN ROUND((a.beneficiarios_ativos::numeric * 100 / p.value)::numeric, 2)
+					ELSE 0::numeric
+				END AS penetracao,
+				a.fonte,
+				SUM(a.beneficiarios_ativos) OVER () AS total_beneficiarios,
+				SUM(COALESCE(p.value, 0)) OVER () AS total_populacao,
+				COUNT(*) OVER () AS total_municipios
+			FROM ans_beneficiarios a
+			INNER JOIN cities c ON c.ibge_code = a.ibge_code
+			INNER JOIN states s ON s.id = c.state_id
+			LEFT JOIN population_indicators p
+				ON p.city_id = c.id
+				AND p.year = (SELECT MAX(year) FROM population_indicators)
+			WHERE a.ano = (SELECT MAX(ano) FROM ans_beneficiarios)
+				AND ($1 = '' OR s.region = $1)
+				AND ($2 = 0 OR s.ibge_code = $2)
+		) t
+		ORDER BY %s DESC, name ASC
+		LIMIT $3
+	`, ansSortColumn(ordenar))
 
-	rows, err := m.db.Query(ctx, query, regiao, ibgeCode)
+	rows, err := m.db.Query(ctx, query, regiao, ibgeCode, limit)
 	if err != nil {
 		return domain.ANSMetrics{}, fmt.Errorf("query ans metrics: %w", err)
 	}
@@ -343,6 +351,9 @@ func (m *MetricsRepo) FindANS(
 		var item domain.ANSMunicipalityMetrics
 		var year int
 		var source string
+		var totalBeneficiaries int64
+		var totalPopulation int64
+		var totalMunicipalities int64
 
 		if err := rows.Scan(
 			&year,
@@ -354,6 +365,9 @@ func (m *MetricsRepo) FindANS(
 			&item.Population,
 			&item.Penetration,
 			&source,
+			&totalBeneficiaries,
+			&totalPopulation,
+			&totalMunicipalities,
 		); err != nil {
 			return domain.ANSMetrics{}, fmt.Errorf("scan ans metrics: %w", err)
 		}
@@ -361,10 +375,11 @@ func (m *MetricsRepo) FindANS(
 		if len(metrics.Municipalities) == 0 {
 			metrics.Year = year
 			metrics.Source = source
+			metrics.Beneficiaries = totalBeneficiaries
+			metrics.Population = totalPopulation
+			metrics.TotalMunicipalities = int(totalMunicipalities)
 		}
 
-		metrics.Beneficiaries += item.Beneficiaries
-		metrics.Population += item.Population
 		metrics.Municipalities = append(metrics.Municipalities, item)
 	}
 
@@ -384,6 +399,17 @@ func (m *MetricsRepo) FindANS(
 	}
 
 	return metrics, nil
+}
+
+func ansSortColumn(ordenar string) string {
+	switch ordenar {
+	case "beneficiarios":
+		return "beneficiarios_ativos"
+	case "populacao":
+		return "populacao"
+	default:
+		return "penetracao"
+	}
 }
 
 func (m *MetricsRepo) findPopulationsByStateIDs(

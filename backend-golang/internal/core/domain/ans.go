@@ -22,10 +22,11 @@ type ANSMunicipalityMetrics struct {
 }
 
 type ANSMetrics struct {
-	Year           int
-	Beneficiaries  int64
-	Population     int64
-	Penetration    float64
-	Source         string
-	Municipalities []ANSMunicipalityMetrics
+	Year                int
+	Beneficiaries       int64
+	Population          int64
+	Penetration         float64
+	Source              string
+	TotalMunicipalities int
+	Municipalities      []ANSMunicipalityMetrics
 }
