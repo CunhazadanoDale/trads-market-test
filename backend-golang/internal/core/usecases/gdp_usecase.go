@@ -2,10 +2,12 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
 
+	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/http/dtos"
 	"github.com/CunhazadanoDale/trads-market-test/internal/adapter/ibge"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/in"
 	"github.com/CunhazadanoDale/trads-market-test/internal/core/ports/out"
@@ -37,6 +39,7 @@ func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 	}
 
 	rows := make([]out.GDPUpsert, 0, len(records))
+	skipped := 0
 
 	for _, record := range records {
 		ibgeCode, err := strconv.ParseInt(
@@ -55,6 +58,11 @@ func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 
 		gdp, err := record.GDP("2023")
 		if err != nil {
+			if errors.Is(err, dtos.ErrSuppressedValue) {
+				skipped++
+				continue
+			}
+
 			return fmt.Errorf(
 				"get GDP for locality %q: %w",
 				record.Localidade.Nome,
@@ -74,6 +82,7 @@ func (g *GDPUsecaseImpl) Import(ctx context.Context) error {
 	}
 
 	log.Printf("%d linhas gravadas em gdp_indicators", len(rows))
+	log.Printf("%d localidades com valor suprimido ignoradas", skipped)
 
 	return nil
 }

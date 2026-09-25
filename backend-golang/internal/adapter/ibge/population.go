@@ -13,6 +13,10 @@ func PopulationByYear(record dtos.PopulationRecord, year string) (int64, error) 
 		return 0, fmt.Errorf("ano %s não encontrado na série", year)
 	}
 
+	if value == "-" || value == ".." || value == "" {
+		return 0, dtos.ErrSuppressedValue
+	}
+
 	population, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao converter valor da população: %w", err)

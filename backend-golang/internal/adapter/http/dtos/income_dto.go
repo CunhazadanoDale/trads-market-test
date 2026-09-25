@@ -38,6 +38,10 @@ func (r IncomeSeries) Income(year string) (float64, error) {
 		)
 	}
 
+	if value == "-" || value == ".." || value == "" {
+		return 0, ErrSuppressedValue
+	}
+
 	income, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return 0, fmt.Errorf(

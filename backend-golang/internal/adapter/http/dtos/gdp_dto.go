@@ -38,6 +38,10 @@ func (r GDPSeries) GDP(year string) (float64, error) {
 		)
 	}
 
+	if value == "-" || value == ".." || value == "" {
+		return 0, ErrSuppressedValue
+	}
+
 	gdp, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return 0, fmt.Errorf(
